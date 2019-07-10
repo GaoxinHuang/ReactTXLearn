@@ -39,6 +39,37 @@ npm install
 (4)	react
 (5)	react-dom
 
+4.	举例 devDependencies 和 dependencies (运行)
+dependencies: less/sass, react, react-dom
+devDependencies: babel, webpack, 
+注:	babel-loader其实是 webpack的 loader 用于 babel 
+
+5.	组装零件
+(1)	npm install (生成 node_module 文件夹)
+(2)	.babelrc 配置 babel文件
+{
+	"presets":["es2015", "react"]
+}
+
+(3)	webpack.config.js
+a.	entry (项目入口)
+b.	output (指明打包以后会生成什么文件)
+c.	module:
+		->rules: 加载的规则, 用什么去加载它, 举例如下:
+		rules:[
+			{
+				test: /\.jsx?$/, //加载文件的规则
+				exclude: /node_modules/, //不执行什么文件
+				loader:	'babel-loader' //用什么去加载它
+			},
+			{
+				test: /\.less$/,
+				loader: 'style-loader!css-loader!less-loader'
+				//注: 这个意思就是 先用less-loader 加载, 然后传给 css-loader, 再传给style-loader
+			}
+		]
+		
+
 
 三.	实际操作
 a.	npm init 
