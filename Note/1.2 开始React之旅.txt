@@ -1,0 +1,16 @@
+L 开始你的 react之旅
+一.	对应和写法
+样式:	import './index.less';
+内容:	ReactDOM.render(
+	<Hello />, // 第一个参数是 component
+	document.getElementById('app') // 挂在哪
+);
+
+模板:	html文件里 <div id ='app'> </div>
+
+二.	重点
+1.	代码
+import 'babel-polyfill'; //引入babel 才能写高级语法
+import './index.less'; // './' 这个是指向同一个目录下
+
+2.	webpack-dev-server

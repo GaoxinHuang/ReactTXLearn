@@ -1,0 +1,35 @@
+L JSX 语法
+一.	JSX 到 HTML 的三步走
+1.	JSX提供类似于HTML标签的写法, 方便开发者编写
+2.	Babel将JSX语法编译为React的API
+3.	React将 ReactAPI中生成的组件渲染为HTML元素
+
+二.	编译例:
+1.	JSX
+render(){
+	return <div><h1 style={{color:'red'}}>Hello</h1></div>
+}
+
+2.	babel编译成 React的API
+render(){
+	return React.createElement('div',{},
+		[React.createElement('h1',{style:{color:'red'}}, 'Hello')]
+	);
+}
+注:	对应如下
+(1)	'div': html 标签, 或 React component 或 React.Fragment
+(2)	{style:{color:'red'}}: 对应了html的点的属性
+(3)	'Hello': 子元素 或 字符串
+
+三.	JSX语法原则
+1.	最外层只能有一个标签包裹
+注:	React.Fragment: 在react16.2提供一个简便的版本, 例子如下
+<><div></div> <p></p></>
+
+2.	标签一定要闭合
+3.	没有子节点(子元素)的标签可以写成自闭和的单标签 (<img /> 或 <App />)
+4.	属性使用是驼峰命名法 - className, 
+比如 <button onClick={...} > Click Me </button>
+注:	因为onClick会react编译的, 所以不能用原来的 onclick
+-----------------------------------------------------------
+L 混合Javascript 和 JSX
