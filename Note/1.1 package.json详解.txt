@@ -1,0 +1,43 @@
+二.	scripts 字段
+scripts 指定了运行脚本命令的 npm 命令行缩写，比如 start 指定了运行 npm run start 时，所要执行的命令。
+
+下面的设置指定了 npm run dev、npm run dist、npm run pub、npm run start、npm run test 时，所要执行的命令。
+
+"scripts": {
+   "dev": "anyproxy --port 8080 --rule proxy.js & npm run start",
+   "dist": "cross-env NODE_ENV=production node ./tools/script.js",
+   "pub": "npm run dist",
+   "start": "cross-env NODE_ENV=development node ./tools/script.js",
+   "test": "node ./test.js",
+}
+我们从上面也可以看出，我们可以在一个字段命令中运行另外一个字段。
+
+三.	bin 字段
+bin 字段用来指定各个内部命令对应的可执行文件的位置，一般而言，对于需要全局安装的包，我们都有该字段：
+
+"bin": {
+  "myCommand": "./bin/index.js"
+}
+上面的代码中指定，myCommand 命令对应的可执行文件在同级别目录下的 bin/index.js 中，因此 npm 在安装该包的时候就会在 node_modules/.bin 的目录下建立符号链接，对于全局安装的包，由于 node_modules/.bin 会在运行时加入系统的 PATH 变量，因此可以直接通过命令来调用脚本。
+
+另外，如果我们是在项目内安装包，也可以通过 npx myCommand 的方式来进行调用。
+
+四.	main 字段
+main 字段指定了加载的入口文件，require('moduleName') 就会加载这个文件。
+
+对于 Node 来说，这个字段的默认值是模块根目录下面的 index.js。
+
+
+五.	config 字段
+config 字段可以添加命令行的环境变量，例如下面的 package.json 文件：
+
+{
+  "name" : "buluo",
+  "config" : { "port" : "8080" },
+  "scripts" : { "start" : "node index.js" }
+}
+在 index.js 中，我们可以直接使用该环境变量：
+
+http
+  .createServer(...)
+  .listen(process.env.npm_package_config_port)

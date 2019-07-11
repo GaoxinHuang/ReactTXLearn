@@ -69,9 +69,19 @@ c.	module:
 			}
 		]
 		
+d.	plugins: 表示所有的插件, 比如
+	plugins:[new HtmlWebpackPlugin({
+		filename:'index.html',
+		template:path.join(_dirname,'./index.html'),
+		chunks:['index']
+		//注: 这里就我们生成的js文件,注入到index.html里
+	})]
 
 
 三.	实际操作
+1.	npm 项目建立
 a.	npm init 
 b.	填写项目名(可以填写)和作者名等等, 回车用默认和跳过就好了
 
+2.	webpack
+(指令)webpack - 就会去 webpack文件里构建, 通过output生成 /dist 文件等
