@@ -32,4 +32,46 @@ render(){
 比如 <button onClick={...} > Click Me </button>
 注:	因为onClick会react编译的, 所以不能用原来的 onclick
 -----------------------------------------------------------
+
 L 混合Javascript 和 JSX
+一.	JSX 中使用 JavasScript
+1.	React.createElement(type, [props], [..children])
+(1)	参数本质都是 JS 语言的数据类型, 当然返回值本身也是 JavaScript object(对象)
+(2)	参数:	type是必填, props和 children是可选
+(3)	React.createElement 整个, props, children都可以和 javascript 语句混合使用. (除了type), 例如:
+a.	React.createElement
+render(){
+	const {useName} = this.state;
+	return useName? <h1>Hello, {userName} </h1>:<h1>Hello react</h1>
+}
+注:	这里'<h1>Hello react</h1>' 就是整个React.createElement 都是 javascript
+
+b.	props 举例:
+render (){
+	return <h1 style = {{fontSize:'14px'}}>Hello</h1>
+}
+注:	最外层的大括号就是 JSX, 里面一层大括号表示此处是一块JS 代码
+	给style 赋值一个 object {fontSize:'14px'}
+	
+c.	Children 
+render(){
+	const slogan = <h1> {name} </h1> //注: 这里面name就是一块JS 代码
+	return <div>{<span>Hello</span>, [slgan]} </div>
+	//注: 输出: Hello, XX
+	//	可以用变量作为参数传入, 还可以让JSX 标签与 JS 混合
+}
+
+二.	条件渲染
+1.	满足某个条件才渲染 -> 使用 &&
+https://mariusschulz.com/blog/the-and-and-or-operators-in-javascript
+
+例如:	
+<div>
+{this.props.name || 'user'} //这里 ||, 就是如果this.props.name为
+
+{!this.props.name && <p>You need log in</p>} 
+</div>
+注:	如果 !this.props.name 是 true
+
+2.	根据某个条件是否成立, 渲染两种不同的元素 -> 使用 三元运算符
+3.	更加复杂的条件	-> 声明变量, 使用 if-else 判断并赋值
