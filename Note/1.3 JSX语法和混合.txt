@@ -68,10 +68,35 @@ https://mariusschulz.com/blog/the-and-and-or-operators-in-javascript
 例如:	
 <div>
 {this.props.name || 'user'} //这里 ||, 就是如果this.props.name为
-
 {!this.props.name && <p>You need log in</p>} 
 </div>
-注:	如果 !this.props.name 是 true
+注:	如果看不懂, 可以详见 重点.txt里的 || 和 && 的应用
 
-2.	根据某个条件是否成立, 渲染两种不同的元素 -> 使用 三元运算符
+2.	根据某个条件是否成立, 渲染两种不同的元素 -> 使用 三元运算符,
+例:	{ this.props.name? <p>Hello, {this.props.name} </p> : <p>please log in</p> }
+
 3.	更加复杂的条件	-> 声明变量, 使用 if-else 判断并赋值
+例:
+render(){
+	let dom =(<div></div>);
+	if(this.props.type === 'admin'){	dom = <p>Hello, Admin </p>	}
+	else if (this.props.type === 'vip'){	dom = <p>Hello, VIP </p> }
+	else {dom = <p>please log in </p>}
+	return dom;
+}
+
+三.	循环渲染
+1.	渲染一系列结构相同的元素, 比如用户列表
+step1.	构建数组型变量
+step2.	Array.map
+
+2.	实例:
+render (){
+	return <ul>
+	{this.props.list.map((item, i) => (<li key={i}>item</li>))}
+}
+注:	1.	react中用数组的子元素来渲染DOM, 必须一个 独一无二 'key' 来定义每个子类. 
+		因为react要根据key来判断这个dom是否发生了变化而重新渲染. 
+		
+	2.	教程里,实际项目不推荐用 i 来作为这个 key, 因为这个是跟数据有关, 而不是跟具体的element有关联,
+		因为 正如上面所说 react会观察key的变化而渲染. 所以 推荐使用Id

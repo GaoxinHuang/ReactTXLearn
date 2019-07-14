@@ -1,0 +1,30 @@
+一.	|| 和 && 应用
+1.	bool 值
+&&: 只要有一个 false 就是 false
+(1)	true && true -> true
+(2)	true && false -> false
+(3)	false && true -> false
+(4)	false && false -> false
+注: 逻辑顺序, 先看第一个是不是false.如果是false, 就不往下看了. 直接return 那个false
+
+||:	只要有一个 true 就是 true
+(1)	true || true -> true
+(2)	true || false -> true
+(3)	false || true -> true
+(4)	false || false -> false
+注: 逻辑顺序, 先看第一个是不是true.如果是true, 就不往下看了. 直接return 那个true
+
+2.	演变成其他值
+&&: 先看第一个是不是能强制转化成false, 如果能, 就return这个值. 
+	不然就return 后一个值, 
+"foo" && "bar"; -> "bar"
+"bar" && "foo"; -> "foo"
+"foo" && "";    -> ""
+""    && "foo"; -> ""
+	
+||:	先看第一个是不是能强制转化成true, 如果能, 就return这个值. 
+	不然就return 后一个值
+"foo" || "bar"; -> "foo"
+"bar" || "foo"; -> "bar"
+"foo" || "";    -> "foo"
+""    || "foo"; -> "foo"
