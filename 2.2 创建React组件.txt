@@ -1,2 +1,44 @@
 L 组件的属性
-一.  
+一.  属性的传递
+方式.  const element = <Hello name="React" />
+注: 这里的属性可以接受 基本类, object, array
+
+二. 属性的接收
+1.  attribute 属性
+class Main extends React.Component{
+    render(){
+        return <div>{this.props.name}</div>
+    }
+} 
+注: Props 是只读的, 只能通过调用一方传递进来, 组件本身不能修改, 比如
+
+Main 组件 ->传递 title -> Header 组件
+只有当 Main组件 重新render(Main内部状态发生变化) -> 再次传递新的title, 并且更新title -> Header 组件
+
+2.  Children 属性:
+(1) main.js
+<Hello><p>Hello</p></Hello>
+
+(2) Hello.js
+render(){
+    return <div>{this.props.children} </div>
+}
+-----------------------------------------------
+
+L   组件的组合与提取
+一. 概念
+    Main组件 
+    ->  组件A 
+    ->  组件B -> 组件C 
+
+注: 1 从Main组件开始, 到子组件. 叫 组件的拆分 (通常用于前端的开发与设计)
+    2 从组件D 到Main组件。 叫 组件的组合
+
+二. 代码组件提取
+1.  理论
+Main 组件
+-> Header 组件 ->
+-> Section 组件 
+->  更多的组件
+
+推荐看 SOLID 原则
