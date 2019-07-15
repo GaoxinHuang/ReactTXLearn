@@ -1,0 +1,15 @@
+L React 组件
+一. 组件的基本:
+1.  export default class Main extends React.Component: 属于 ES6的写法
+2.  render(): 是组件的必要的方法, 返回一个react元素(与React.CreateElement(...)返回值相同)
+
+二. 组件的使用
+1.  基于DOM 标签的 React 组件
+const element = <h1> Hello</h1>
+
+2.  基于自定义的标签
+class Hello extends React.Component{
+    render(){
+        return <h1>Hello</h1>
+    }
+}
