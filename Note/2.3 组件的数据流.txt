@@ -1,0 +1,86 @@
+L 组件的State
+一. 概念
+组件(state) = view
+
+二. 举例说明 和 state的更新
+class Main extends React.Component{
+    constructor(props){
+        super(props);
+        this.state ={
+            clock: new Date()
+        }
+        //注: 初始化一个时钟状态
+    }
+    componentDidMount(){ // 加载后新增一个时钟定时器
+        this.interval = setInterval(()=>{
+            this.setState({
+                clock: new Date() // 使用 setState 方法更新 state
+                });
+        }, 1000);
+    }
+    componentWillUnmount(){ // 将要结束加载后, 取消定时器
+        clearInterval(this.interval);
+    }
+    render(){
+        return <div>{this.state.clock.toLocaleTimeString()}</div>
+    }
+}
+注: setState -> 触发 render -> 更新 View
+
+L 正确地使用组件的state (资料)
+一. 正确地定义组件 State
+State 是组件 UI 的数据模型，UI 的改变可以从 State 的变化中反映，而 State 中所有状态的改变都会引起组件 UI 的变化。
+一个变量是否应该被设置为状态，可以从以下两点进行判断：
+1.  这个变量能否通过其它状态或者 props 计算得到？如果可以，则其不应该作为一个状态。
+2.  该变量是否在 render 方法中被使用，如果没有，其不该作为一个状态。
+总结:   简单来说，组件的状态一定要体现到 UI 的更新，且其值是唯一，无法通过计算得到。
+
+二. 实际操作方法
+1.  更新 State的方法
+this.state.comment = 'Hello'; // 错误
+this.setState({comment: 'Hello'}); // 正确
+注: 构造函数是唯一能够初始化 this.state.key =xxx 的地方。
+
+2.  状态更新可能是异步的 (新的state 需要用到之前state 情况)
+React 可能会将多个 setState 调用合并成一个调用来提高性能.
+因此 this.props 和 this.state 可能是异步更新的，你不应该依靠它们的值来计算下一个状态。例如
+(1) 错误做法
+this.setState({
+  counter: this.state.counter + this.props.increment,
+});
+
+(2) 正确做法
+this.setState((prevState, props) => ({
+  counter: prevState.counter + props.increment
+}));
+注: 在这种情况下，我们使用 setState 方法时应当接收一个函数而不是一个对象。该函数将旧状态作为第一个参数，将此次更新被应用时的props作为第二个参数
+
+
+三. react 中 setState 的浅合并 (应用于多个状态)
+1.  概念: 当调用 setState方法时, React 将你提供的更新对象合并到当前状态里来.
+2.  举例如下:
+    a.  初始化代码
+    constructor(props) {
+        super(props);
+        this.state = {
+            posts: [],
+            comments: []    
+        };
+    }
+
+    b.  setState代码
+    componentDidMount() {
+        fetchPosts().then(response => {
+            this.setState({
+                comments: response.comments
+            });
+        });
+    }
+
+注：    这里的合并是浅合并，也就是说 this.setState({comments}) 完整保留了 this.state.posts，但完全替换了 this.state.comments。
+
+四. React中 state的提升
+1.	状态提升：	在 React 中，状态分享是通过将 state 数据提升至离需要这些数据的组件最近的父组件来完成的。
+2.	在 React 应用中，遵循单一数据源原则。
+	简单来说，如果两个或者多个组件依赖于相同的数据，那么这些数据应当放到离需要它们的最近的父组件中，在应用中保持自上而下的数据流。
+	这样的做法可以帮助我们更快的定位 bug，因为组件的状态只有组件自身可以操作，把可能产生 bug 的范围大大缩减了。
