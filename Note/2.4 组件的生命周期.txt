@@ -5,10 +5,12 @@ L 组件的生命周期
 0.  参考:   http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/
     注: 点击 -> 展示不常用的生命周期
 
+    词汇: 挂载 -> 英文 -> commit
+
 一. 概念
 1.  组件的生命周期阶段: 装载过程 -> 更新过程 -> 卸载过程
 
-2.  生命周期对应的函数 (以下16.3之后)
+2.  生命周期对应的函数 (以下16.4之后)
 (1) 装载过程
     a.  static getDerivedStateFromProps(nextProps, prevState): 组件创建之后, 但是DOM 未挂载UI上
     作用: 当初始化后, State 和 props 有一定的关系, 比如根据props的值来改变 state. 可以用这个函数
