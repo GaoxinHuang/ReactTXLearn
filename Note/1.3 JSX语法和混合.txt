@@ -93,8 +93,9 @@ step2.	Array.map
 2.	实例:
 render (){
 	return <ul>
-	{this.props.list.map((item, i) => (<li key={i}>item</li>))}
-}
+		{this.props.list.map((item, i) => (<li key={i}>item</li>))}
+	</ul>
+	}
 注:	1.	react中用数组的子元素来渲染DOM, 必须一个 独一无二 'key' 来定义每个子类. 
 		因为react要根据key来判断这个dom是否发生了变化而重新渲染. 
 		
