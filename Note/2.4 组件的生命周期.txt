@@ -1,0 +1,114 @@
+L 什么是组件的生命周期 - 创建 -> 更新 -> 销毁
+
+L 组件的生命周期
+
+0.  参考:   http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/
+    注: 点击 -> 展示不常用的生命周期
+
+一. 概念
+1.  组件的生命周期阶段: 装载过程 -> 更新过程 -> 卸载过程
+
+2.  生命周期对应的函数 (以下16.3之后)
+(1) 装载过程
+    a.  static getDerivedStateFromProps(nextProps, prevState): 组件创建之后, 但是DOM 未挂载UI上
+    作用: 当初始化后, State 和 props 有一定的关系, 比如根据props的值来改变 state. 可以用这个函数
+    注: 
+        - props 和 state 都是指 当前的props 和 state
+        - 这个函数是 static的, 所以这个函数与组件状态无关(所以不能用this.state去获取state), 只要传入一个 props和state. 就会生成新的 state
+        - 这个函数在更新过程也会被调用(所以是多次调用的)
+        - 当函数返回 null 时, 表示不要更新 state. 返回一个对象就会被合并到 state里
+
+    b.  componentDidMount: 组件已经完成实例化, 已经挂载到DOM上 
+    (在整个生命周期里, 只在创建时调用, 所以只会调用一次)
+    作用: 
+        - 执行Ajax 请求 (因为请求ajax一般都是页面加载好之后, 需要展示数据才用)
+        - 执行事件订阅 (比如设定 onClick , 也是需要 DOM 加载后才能绑定事件)
+
+(2) 更新过程
+    a.  static getDerivedStateFromProps(nextProps, prevState): 根据props 计算或设置 state. 
+        所以在更新过程的情况下, 只要props或者state更新, 这个函数都会触发. 在计算好之后, 就会得到最终版本的 state
+
+    b.  shouldComponentUpdate(nextProps, nextState): 判断是否重新渲染(render), 返回true 就会继续进行下去. 否则中断
+
+    c.  getSnapshotBeforeUpdate(prevProps, prevState): 已经render函数已经执行好了, 但是还没被渲染更新到 DOM 上 
+    作用: 
+        - 返回值将作为下一生命周期函数(componentDidUpdate)的第三个参数
+        - 它让你的组件执行render后, 还未渲染之前, 可以获取老的Props 和 State进行操作, 通过return来传递计算后的值到下个周期
+
+    d.  componentDidUpdate(prevProps, prevState, snapshot): 组件完成更新 
+    作用: 与 componentDidMount类似, 但是这个每次更新完, 都会被调用(多次调用)
+
+(3) 卸载过程
+a.  componentWillUnmount： 函数在组件被卸载和销毁之前被调用
+    作用: 可以在该方法里做清理工作，例如解绑定时器，取消网络请求，清理任何在 componentDidMount 环节创建的 DOM 元素，取消事件订阅
+
+(4) 异常处理的周期函数 (不在正常周期内)
+a.  componentDidCatch:  子组件发生错误就会触发, 自己本身错误无法触发
+    作用: 
+        - 这个函数类似于 JavaScript catch {} 块, 实际上，大多数情况下，我们只需要声明一次错误边界组件，并在整个应用程序中使用它。
+        - 一旦定义了这个生命周期方法, 这个类组件将成为一个 '错误边界' 组件。我们可以在错误边界组件捕获到 JavaScript 错误的时候，显示回退的用户界面。
+        - 错误边界仅捕获组件树中处于它们子层级组件中的错误。错误边界本身的错误无法捕获。如果错误边界组件自身报错，则错误将传播到其上方的错误边界。
+        
+3.  生命周期的流量图
+(1) 创建时: constructor -> getDerivedStateFromProps -> render -> render 更新DOM -> componentDidMount
+
+(2) 更新时(更新有多个情况)
+a.  新属性/setState： 
+    (再次)getDerivedStateFromProps -> shouldComponentUpdate -> render -> getSnapshotBeforeUpdate -> render 更新DOM -> componentDidMount
+
+b.  forceUpdate:(比起上面少了一个 shouldComponentUpdate)
+    getDerivedStateFromProps -> render -> getSnapshotBeforeUpdate -> render 更新DOM -> componentDidMount
+
+(3) 卸载时: componentWillUnmount
+
+(4) 异常处理的周期函数 (不在正常周期内): componentDidCatch
+
+二. 几个函数实际操作
+1.  getDerivedStateFromProps 函数
+    static getDerivedStateFromProps(props, state){
+        const hour = props.hour;
+        const nexClock = new Date(state.clock); //这里 new Date 是为了 clone, 以防修改当前的state 
+        nexClock.setHours(hour);
+        return  {
+            clock: nextClock //这个clock 在 state是有初始化的
+        };
+    }
+注: UI 就会更新成 根据这个返回的新的 state 去实行
+复制上面的注意点
+    - props 和 state 都是指 当前的props 和 state
+    - 这个函数是 static的, 所以这个函数与组件状态无关(所以不能用this.state去获取state), 只要传入一个 props和state. 就会生成新的 state
+    - 这个函数在更新过程也会被调用(所以是多次调用的)
+    - 当函数返回 null 时, 表示不要更新 state. 返回一个对象就会被合并到 state里
+
+2.  componentDidCatch:
+(1) 组件代码
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  componentDidCatch(error, info) {
+    // 显示错误发生的回退视图
+    this.setState({ hasError: true });
+    // 也可以上报错误到服务器
+    logErrorToMyService(error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // 定制任意的回退视图
+      return <h1>页面被外星人偷走了</h1>;
+    }
+    return this.props.children;
+  }
+}
+
+(2) 组件使用
+<ErrorBoundary>
+  <MyWidget />
+</ErrorBoundary>
+
+注: a.  这个函数类似于 JavaScript catch {} 块, 实际上，大多数情况下，我们只需要声明一次错误边界组件，并在整个应用程序中使用它。
+    b.  一旦定义了这个生命周期方法, 这个类组件将成为一个 '错误边界' 组件。我们可以在错误边界组件捕获到 JavaScript 错误的时候，显示回退的用户界面。
+    c.  错误边界仅捕获组件树中处于它们子层级组件中的错误。错误边界本身的错误无法捕获。如果错误边界组件自身报错，则错误将传播到其上方的错误边界。
