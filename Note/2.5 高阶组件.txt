@@ -1,0 +1,72 @@
+L React 高阶组件
+一. 概念
+1.  定义: Fn(组件) = 高阶组件 
+注: 高阶组件是个函数, 这个函数的参数是组件, 而且返回值也是个组件. 就是一个高阶组件
+
+2.  作用:   高阶组件实现了组件逻辑整合的重用, 例如
+背景: A播放器(组件)和B播放器(组件)的小组件逻辑和功能都是一样, 只是style或者UI有些偏差
+解决方案:   
+    (1) 将那几个播放小组件逻辑整合成一个 高阶组件
+    (2) 高阶组件再根据不同的情况变成 A播放器 和 和B播放器
+
+3.  高阶组件的特性: (高阶组件通常都是给原始组件加一个wrap)
+(1) 高阶组件不会改变原始组件 
+(2) 高级组件是对原始组件的能力加强 (有点像 装饰者模式)
+
+二. 代码实例
+1.  高阶组件 (hello.jsx)
+import React from 'react';
+const Hello =(BasicComponent)=>{
+    return class extends React.Component{
+        render(){
+            return 
+            <div>
+                <p>Hello</p>
+                <BasicComponent {...this.props} />  //将自己的props 传给这个 BasicComponent
+            </div>
+        }
+    }
+}
+export Hello;
+
+2.  被wrap 的组件 (main.jsx)
+import React from 'react';
+import Hello from './Hello';
+......
+export default Hello(Main);
+
+L 装饰者模式 (资料)
+一. 概念
+1.  定义:   装饰模式可以在不改变一个对象本身功能的基础上给对象增加额外的新行为。
+2.  作用:   
+(1).    装饰模式是一种用于替代继承的技术，它通过一种无须定义子类的方式来给对象动态增加职责，使用对象之间的关联关系取代类之间的继承关系。
+(2).    在装饰模式中引入了装饰类，在装饰类中既可以调用待装饰的原有类的方法，还可以增加新的方法，以扩充原有类的功能。
+
+二. 代码实例
+1.  原代码
+var Police = function () {};
+Police.prototype.work = function () {
+    console.log('交通协调');
+};
+
+2.  要求: 给Police 添加一个功能 console.log('开罚单');
+
+3.  错误演示
+Police.prototype.work = function () {
+    console.log('交通协调');
+    console.log('开罚单');
+};
+注: 违反了 开放-封闭原则 (对修改封闭, 对功能扩展开放)
+
+4.  正确演示
+var TicketDecorator = function(police) {
+    this.police = police;
+}
+
+TicketDecorator.prototype.work = function() {
+    this.police.work();
+    console.log('开罚单');
+}
+注: 扩展的功能就调用: 
+var police = new TicketDecorator(new Police());
+police.work();
