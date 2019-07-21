@@ -1,0 +1,73 @@
+L Refs & DOM
+一. 概念
+1.  Refs: 提供了一种方式, 用于访问在render 方法中创建的DOM 或 React元素
+2.  操作流程: React -> 通过 Refs获取 DOM 节点的实例 -> 直接操作 DOM, 更新组件
+3.  使用场景:
+(1) 处理焦点:   比如, 输入框的获取焦点
+(2) 文本选择:   比如, 通过选框的方式获取一段文字
+(3) 媒体控制:   做 视频 和 音频的播发器
+(4) 触发强制动画
+(5) 与第三方 DOM 库集成或者交互
+
+二. Refs的使用: 通过Refs 访问 DOM 节点的实例
+1.  方法一: 使用 React.createRef & ref.current 
+(1)  创建Ref
+constructor(props){
+    super(props);
+    this.myRef = React.createRef();
+}
+
+(2)  绑定 Ref
+render(){
+    return <div><input ref={this.myRef} /> </div>
+}
+
+(3)  访问 DOM 节点
+compnentDidMount(){
+    this.myRef.current.focus();
+}
+
+2.  方法二: 通过回调 Refs 获取 DOM 节点
+(1) 初始化一个变量存储 Ref
+constructor(props){
+    super(props);
+    this.myRef = null;
+}
+
+(2)  传入回调函数直接绑定 DOM 实例
+render(){
+    return <div><input ref={r => {this.myRef = r; } /> </div>
+}
+(3)  访问 DOM 节点
+compnentDidMount(){
+    this.myRef.focus(); // 少一个 current
+}
+
+三. 实际代码操作
+1.  方法一的实际操作: 自动获取焦点
+export default class Refer extends React.Component{
+    constructor(props){
+        super(props);
+        this.myRef = React.createRef();
+    }
+    compnentDidMount(){
+        this.myRef.current.focus();
+    }
+    render(){
+        return <div><input ref={this.myRef} /> </div>
+    }
+}
+
+2.  方法二实际操作: 自动获取焦点
+export default class Refer extends React.Component{
+    constructor(props){
+        super(props);
+        this.input = null;
+    }
+    compnentDidMount(){
+        this.input.focus(); // 少一个 current
+    }
+    render(){
+        return <div><input ref={r => {this.input = r; } /> </div>
+    }
+}
