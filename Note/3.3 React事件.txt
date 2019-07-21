@@ -17,6 +17,7 @@ b.  React事件 - 接受一个函数(jsx), 比如 {this.logMsg}
 (2) 类定义组件: 
 a.  bind 方法
 b.  箭头绑定
+c.  (自学心得)无自定义的参数绑定 (如果函数里不需要传入this)
 
 3.  流程操作:
 a.  bind 方法
@@ -45,6 +46,14 @@ a.  事件调用
 b.  函数
 deleteRow(所传参数, event){ ... }
 注: 这种函数, event 是显式的传入, 所以可以选择 Event的顺序. 
+
+3.  无自定义的参数绑定 (自学心得, 因为教程没提到, 下面也没有代码操作)
+a.  事件调用
+<button onClick ={this.deleteRow} > Delete Row </button>
+注: 只能这么写，就是传递默认的参数，其实这里是不需要传入this里的别的参数，。
+
+b.  函数
+deleteRow(event){ ... }
 
 四. 代码操作
 1.  原代码

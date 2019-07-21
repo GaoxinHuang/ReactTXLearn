@@ -1,0 +1,98 @@
+L 受控组件
+一.  概念
+1.  定义：受控组件的值是由 React来控制的, 只有 React控制的表单元素就是 受控组件 (自学心得: 有点双向绑定的感觉)
+2.  举例：用户输入 或 (表单变化) => newState (我们会设置一个 newState去维护和控制它) 
+3.  流程图:
+用户输入, 表单值发生变化 -> 触发 onchange 函数 -> 调用 setState -> 触发 render (重新渲染) -> 表单数据更新成功
+
+4.  特点
+(1) 组件的 value 是由 this.state 所管理
+(2) 组件的 onChange 也是由react来监管 来更新 state 
+注: 如果只有(1), 没有(2)。React 就会报错，说 value会只是一个只读值，需要设置 onChange来控制。
+    需要通过设置成只读或设置 onChange来取消报错
+
+二. 代码操作
+export defalut class Form extends React.Component{
+    constructor(props)={
+        super(props);
+        this.state={
+            text: ''
+        }
+        this.handleChange = this.handleChange.bind(this);
+    }
+    handleChange(e){
+        this.setState({
+            value:e.target.value
+        })
+    }
+    render(){
+        return <input value={this.state.value} onChange = {this.handleChange} />
+    }
+
+}
+注: 这个就是获取 用户输入的值, 更新到这个value
+
+L 常用表单元素(受控组件写法)
+一. textarea
+HTML 写法:
+<textarea> some text</textarea>
+
+React 写法: 
+<textarea value={this.state.value} onChange={this.handleChange} />
+注: react里textarea可以直接闭合
+
+二. select
+HTML 写法:
+<select> 
+    <option value ="cat" selected>Cat</option>
+</select>
+
+React 写法: 
+<select value={this.state.value} onChange={this.handleChange}> 
+    <option value ="cat" selected>Cat</option>
+</select>
+注: select的value={this.state.value}, 是根据value的值判断选中项
+
+三. 一个 hanlder函数同时处理多个组件
+1.  解决方案   
+(1) 为每个元素添加一个name属性作为其唯一标识
+(2) onChange 事件函数根据event.target.name的值 做不同的处理
+
+2.  实际代码操作
+export defalut class Form extends React.Component{
+    constructor(props)={
+        super(props);
+        this.state={
+            name: '',
+            gender:'M',
+            likeGame:false,
+            likeMusic:false
+        }
+        this.handleChange = this.handleChange.bind(this);
+    }
+    handleChange(e){
+        cost name = e.target.name;
+        let value = e.target.value;
+        const type = e.target.type;
+        if(type==='checkbox'){
+           value = e.target.checked;
+        }
+        this.setState({
+                [name]: value
+        })
+    }
+    render(){
+        return <div>
+        <input type="text" name="name" value={this.state.name}  onChange={this.handleChange}  />
+        <div>
+            <label>M</label> <input type="radio" value="M" name="gender" checked={this.state.gender==='M'}  onChange={this.handleChange}  />
+            <label>F</label> <input type="radio" value="F" name="gender" checked={this.state.gender==='F'}  onChange={this.handleChange}  />
+        </div>
+        <div>
+            <label>game</label> <input type="checkbox" name="likeGame" checked={this.state.likeGame}  onChange={this.handleChange} />
+            <label>music</label> <input type="checkbox" name="likeMusic" checked={this.state.likeMusic}  onChange={this.handleChange} />
+        </div>
+        </div>
+    }
+
+}
