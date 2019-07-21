@@ -1,0 +1,134 @@
+L React 事件
+一. 概念
+1.  对比 
+(1) 事件名: 
+a.  传统事件 -- 小写写法, 比如 onclick
+b.  React事件 - 驼峰式写法, 比如 onClick  
+
+(2) 函数:
+a.  传统事件 -- 接受一个字符串, 比如 "showLog()"
+b.  React事件 - 接受一个函数(jsx), 比如 {this.logMsg}  
+
+二.  React 事件函数中this (如果需要this的话, 必须事件函数里绑定 this)
+1.  概念： React 中需要给事件函数绑定 this. 因为 ES6写法中, 事件函数是作为类的方法进行声明的. React 框架默认是不会自定给事件函数绑定this的
+
+2.  情景和解决方案
+(1) 函数式组件: 函数式组件没有this, 不需要额外绑定
+(2) 类定义组件: 
+a.  bind 方法
+b.  箭头绑定
+
+3.  流程操作:
+a.  bind 方法
+(1) 新增一个事件方法
+(2) 构造函数中为事件方法绑定this (推荐写法)
+(3) 绑定事件
+
+b.  箭头绑定
+(1) 新增一个事件方法
+(2) 使用箭头函数绑定事件
+
+三. 参数传递
+1.  bind方式
+a.  事件调用
+<button onClick ={this.deleteRow.bind(this, a, b)} > Delete Row </button>
+注: 第一参数必须是 this. 
+
+b.  函数
+deleteRow(所传参数, event){ ... }
+注: onClick 的 事件对象隐式的传递, 这种事件对象参数 event 都是被放在所传参数的最后面
+
+2.  箭头函数
+a.  事件调用
+<button onClick ={(e) => this.deleteRow.bind(a, b, e)} > Delete Row </button>
+注: event 必须是显式的传入
+b.  函数
+deleteRow(所传参数, event){ ... }
+注: 这种函数, event 是显式的传入, 所以可以选择 Event的顺序. 
+
+四. 代码操作
+1.  原代码
+export default class Button extends React.Component{
+    constructor(props){
+        super(props);
+        this.state={
+            toggle:false
+        }
+    }
+    switch(e){
+        this.setState({toggle: !this.state.toggle})
+    }
+    render(){
+        return <button onClick={this.switch} > {this.state.toggle? 'OFF':'ON'} </button>
+    }
+}
+2.  bind方式 
+(1) 在 render中绑定 (不推荐, 性能低)
+render(){
+        return <button onClick={this.switch.bind(this)} > {this.state.toggle? 'OFF':'ON'} </button>
+}
+注: 直接绑定这整个 class 的属性,不是很推荐
+
+(2) 绑定在 constructor里
+    constructor(props){
+        super(props);
+        this.state={
+            toggle:false
+        }
+        this.switch = this.switch.bind(this);
+    }
+注: 但是无法传自定义的参数
+
+3.  箭头函数绑定
+render(){
+        return <button onClick={(e) => {this.switch(e)}} > {this.state.toggle? 'OFF':'ON'} </button>
+}
+
+L. React 合成事件 (资料)
+一. 概念
+1.  React的 onClick 实际上是 React 的合成事件。React 并不是将 click 事件绑在该 div 的真实 DOM 上，
+而是在 document 处监听所有支持的事件，当事件发生并冒泡至 document 处时，React 将事件内容封装并交由真正的处理函数运行
+
+2.  流程顺序图:
+div -> 事件冒泡 -> document -> synthetic event (合成/人造 事件) -> event -> handler (react)
+
+二. 代码操作
+1.  React原生事件和合成事件代码演示 (利用到 Ref)
+export default class App extends Component {
+    constructor(props){
+        super(props);
+        this.ref1 = React.createRef();
+    }
+
+    componentDidMount(){
+        this.ref1.current.addEventListener('click', (e) => {
+            console.log('Dom Handle Click', e);
+        })
+    }
+
+    handle(e){
+        console.log('React Handle Click', e);
+    }
+
+    render() {
+        return (
+            <div className="App" onClick={this.handle.bind(this)} ref={this.ref1} >
+                Hello world
+            </div>
+        );
+    }
+}
+输出结果：
+    Dom Handle Click
+    React Handle Click
+注: 这也验证了 React 其实是在事件冒泡到 document 时才开始做处理的。
+
+2.  我们如果想阻止事件冒泡，那么事件是不会到达 React 的合成事件回调函数中的. 代码如下
+componentDidMount(){
+     this.ref1.current.addEventListener('click', (e) => {
+         console.log('Dom Handle Click', e);
+         e.stopPropagation()
+     }, false)
+}
+
+输出结果：  Dom Handle Click
