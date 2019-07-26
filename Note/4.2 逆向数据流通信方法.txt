@@ -92,3 +92,84 @@ class Parent extends React.Component{
 
 注: 子组件所使用的数据, 为了让子组件之间能够相互的交互。我们把有些数据从子组件放到父组件中来维护。然后通过props 来更新子组件。 
     所以这样 数据被"提升"到父组件当中， 这样的过程叫做 状态提升
+
+
+
+五. 兄弟节点之间的通信(练习)
+// PeopleA 组件
+class PeopleA extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            city: 'HongKong'
+        }
+    }
+    componentDidMount() {
+        // 在此处与B组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
+         this.props.loaded(this.state.city);
+    }
+    render() {
+        var bCity = this.props.bCity;
+        return (
+            <div id="fromA">
+                {bCity && 
+                    "B comes from " + bCity + "."
+                }
+            </div>
+        )
+    }
+}
+// PeopleB 组件
+class PeopleB extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            city: 'Guangzhou'
+        }
+    }
+    componentDidMount() {
+        // 在此处与A组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
+        this.props.loaded(this.state.city);
+    }
+    render() {
+        var aCity = this.props.aCity;
+        return (
+            <div id="fromB">
+                {aCity && 
+                    "A comes from " + aCity + "."
+                }
+            </div>
+        )
+    }
+}
+
+class App extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            aCity: '',
+            bCity: '',
+        }
+    }
+    getCity(cityType, v){
+        if(cityType ==='aCity'){
+            this.setState({
+                 aCity: v
+            }
+            );
+        } else if(cityType ==='bCity'){
+            this.setState({
+                 bCity: v
+            }
+            );
+        }
+    }
+    render() {
+        return (
+            <div>
+                <PeopleA bCity={this.state.bCity} loaded={(value)=>{this.getCity('aCity',value)}} />
+                <PeopleB aCity={this.state.aCity} loaded={(value)=>{this.getCity('bCity',value)}} />
+            </div>
+        )
+    }
+}
