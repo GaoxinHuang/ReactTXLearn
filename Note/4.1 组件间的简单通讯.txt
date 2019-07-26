@@ -1,0 +1,34 @@
+L 组件中的数据流
+一. 流向总结
+1.  数据由父类流向子类 --- props 
+2.  组件内部的传递 --- state 
+3.  组件之间的传递 --- 通常组件之间彼此相互独立, 实现特定的功能
+
+二. 组件间之间传递数据的类型
+1.  父组件 -> 子组件: props
+2.  子组件 -> 父组件: 
+3.  兄弟组件之间传递数据 (都在同一个父组件之下)
+4.  任一组件传递数据
+
+三. 代码举例 (未完 - 4.2里还有举例其他几种)
+1.  父组件 -> 子组件: props
+(1) 子组件
+class Child extends React.Component{
+    constructor (props){
+        super(props);
+    }
+    render(){
+        return <h1> Hello {this.props.name} </h1>
+    }
+}
+
+(2) 父组件
+class Parent extends React.Component{
+    constructor (props){
+        super(props);
+    }
+    render(){
+        return <Child name="Jack" /> 
+    }
+}
+
