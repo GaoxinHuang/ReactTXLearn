@@ -1,0 +1,209 @@
+L 兄弟节点之间的通信(练习)
+// PeopleA 组件
+class PeopleA extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            city: 'HongKong'
+        }
+    }
+    componentDidMount() {
+        // 在此处与B组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
+         this.props.loaded(this.state.city);
+    }
+    render() {
+        var bCity = this.props.bCity;
+        return (
+            <div id="fromA">
+                {bCity && 
+                    "B comes from " + bCity + "."
+                }
+            </div>
+        )
+    }
+}
+// PeopleB 组件
+class PeopleB extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            city: 'Guangzhou'
+        }
+    }
+    componentDidMount() {
+        // 在此处与A组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
+        this.props.loaded(this.state.city);
+    }
+    render() {
+        var aCity = this.props.aCity;
+        return (
+            <div id="fromB">
+                {aCity && 
+                    "A comes from " + aCity + "."
+                }
+            </div>
+        )
+    }
+}
+
+class App extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            aCity: '',
+            bCity: '',
+        }
+    }
+    getCity(cityType, v){
+        if(cityType ==='aCity'){
+            this.setState({
+                 aCity: v
+            }
+            );
+        } else if(cityType ==='bCity'){
+            this.setState({
+                 bCity: v
+            }
+            );
+        }
+    }
+    render() {
+        return (
+            <div>
+                <PeopleA bCity={this.state.bCity} loaded={(value)=>{this.getCity('aCity',value)}} />
+                <PeopleB aCity={this.state.aCity} loaded={(value)=>{this.getCity('bCity',value)}} />
+            </div>
+        )
+    }
+}
+
+L 发布-订阅模式 (资料)
+一. 理论
+1.  和发布-订阅模式类似的，还有观察者模式，在这里我们不会详细区分发布-订阅模式和观察者模式的区别，我们仅对发布-订阅模式做讲解。
+2.  发布订阅者的三个部分:
+(1) 发布者：发布消息，供订阅者订阅（但并不知道是谁订阅）。
+(2) 订阅者：订阅特定类型的消息（但是并不知道是谁发布的消息）。
+(3) 功能器：作为中介链接发布者和订阅者，发布者可以向功能器发布消息以供订阅者订阅，订阅者可以向功能器订阅特定类型的消息。
+
+3.  发布订阅者的优点
+(1) 松耦合 - 发布者不需要知道订阅者的数量，或者订阅者是通过什么方式运行的。他们能够相互独立地运行，这样就可以让你分开开发这两部分而不需要担心对状态或实现的任何细微的影响。
+(2) 更干净的设计 - 充分地利用好发布-订阅模式，你不得不深入地思考不同的组件是如何交互的。这通常会让我们的设计更加干净整洁。
+(3) 灵活性 - 你不需要担心不同的组件是如何组合在一起的。只要他们采用同一种发布-订阅的实现。
+(4) 容易测试 - 你可以很好地找出发布者或订阅者是否会得到错误的信息。
+
+4.  发布订阅者的缺点 - 发布者和订阅者隔离也会导致系统不稳定、发布者或订阅者数量激增时出现问题等缺点， 但是一般而言，项目中恰当地使用发布-订阅模式是有助于我们的实际开发的。
+
+二. 代码实现
+class Events{
+    constructor(){
+        this.cache = {};
+    }
+    // 发布
+    publish(topic, args, scope) {
+        if (this.cache[topic]) {
+            let thisTopic = this.cache[topic],
+                i = thisTopic.length - 1;
+
+            for (i; i >= 0; i -= 1) {
+                thisTopic[i].apply( scope || this, args || []);
+            }
+        }
+    }
+    // 订阅
+    subscribe(topic, callback) {
+        if (!this.cache[topic]) {
+            this.cache[topic] = [];
+        }
+        this.cache[topic].push(callback);
+        return [topic, callback];
+    }
+    // 取消订阅
+    unsubscribe(handle, completly) {
+        let t = handle[0],
+            i = this.cache[t].length - 1;
+        if (this.cache[t]) {
+            for (i; i >= 0; i -= 1) {
+                if (this.cache[t][i] === handle[1]) {
+                    this.cache[t].splice(this.cache[t][i], 1);
+                    if(completly){ delete this.cache[t]; }
+                }
+            }
+        }
+    };
+}
+
+// 测试：
+const event = new Events();
+event.subscribe('weather', (w) => {
+    console.log('The weather is', w)
+});
+event.publish('weather', ['windy']);
+
+L 使用 context 来通信 (资料)
+一. 概念
+1.  用途: 在一般的 React 程序中，数据通过 props 自上而下由父对象传递给子对象，
+        但是对于某些变量来说（比如全局环境变量、全局主题等）如果层层传递，会增加很多麻烦。
+        而 Context 提供了一种在组件之间共享这些值的方法，无需通过组件层层传递 props。
+
+2.  Context的使用中的角色
+(1) 一种是 Context 的生产者（Provider），通常是一个父节点
+(2) 另外一种是 Context 的消费者（Consumer），通常是一个或多个子节点，
+总结:   因此，我们也可以将 Context 理解为一种生产者-消费者模式。
+
+3.  教程中的版本问题:   React 的 Context 的 API 随着版本更新有过较大的变动，我们这里所指的是基于 V16.3+ 的版本对应的 Context API。
+
+4.  Context 的注意:
+(1) 在 React 官方文档中，Context 被归类为高级部分，属于 React 的高级 API，官方并不建议在稳定版本的项目中过多使用 Context。
+(2) 实际上，在项目中使用 Context API，虽然会减少一些显式的 props 传递，
+    但如果 Context 传递的内容过多反而会导致数据流向的不清晰，从而让我们的应用变得难以维护和调试，我们在实际使用中，需要注意其中的平衡。
+
+二. 代码实例
+案例介绍: 假设我们有一个根组件 <APP />，我们希望在根组件中拥有一个 theme 变量，这个 theme 变量可以控制整个系统的主题，
+            比如按钮的颜色等等，我们这里通过 Context 来将 theme 传递至孙子组件。
+
+1.  App.jsx 中代码
+const ThemeContext = React.createContext('light');
+class App extends React.Component {
+    constructor(props){
+        super(props);
+        this.state = {
+            theme: 'light'
+        }
+    }
+
+    changeTheme(e){
+        this.setState({
+            theme: e.currentTarget.value
+        })
+    }
+
+    render() {
+        return (
+            <ThemeContext.Provider value={this.state.theme}>
+                <Toolbar />
+                <div>
+                    <label>dark:</label>
+                    <input type="radio" value='dark' onChange={this.changeTheme.bind(this)} name="theme-radio" id="dark-radio" />
+                    <label>light:</label>
+                    <input type="radio" value='light' onChange={this.changeTheme.bind(this)} name="theme-radio" id="light-radio"/>
+                </div>
+            </ThemeContext.Provider>
+        );
+    }
+}
+
+2.  Toolbar.js  - 中间层级的组件, 用于切换
+function Toolbar(props) {
+    return (
+        <div>
+            <ThemedButton />
+        </div>
+    );
+}
+
+3.  ThemedButton.js
+function Button(props) {
+    return (
+        <button className={props.theme + "-button"}>ContextButton</button>
+    )
+}

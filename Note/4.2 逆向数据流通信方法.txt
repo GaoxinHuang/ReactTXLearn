@@ -9,9 +9,9 @@ L 状态提升
 解析:   将子组件的数据传给父组件, 然后再由父组件传给另一个子组件
 
 4.  任一组件传递数据: 通过全局变量连接各个组件, 方法比如
-(1) 发布-订阅者模式 --- 常常用于事件监听的系统
+(1) 发布-订阅者模式 --- 常常用于事件监听的系统 (4.3的资料和练习有例子)
 (2) window 下的全局变量 --- 读取一些配置
-(3) Context --- React的上下文, 全局的配置 (比如 主题色, )
+(3) Context --- React的上下文, 全局的配置 (比如 主题色, )  (4.3的资料和练习有例子)
 (4) ....
 
 
@@ -95,81 +95,58 @@ class Parent extends React.Component{
 
 
 
-五. 兄弟节点之间的通信(练习)
-// PeopleA 组件
-class PeopleA extends React.Component {
-    constructor(props) {
+L 简易聊天室
+1.  子组件 Talker
+class Talker extends React.Component{
+    constructor (props){
         super(props);
-        this.state = {
-            city: 'HongKong'
+        this.state ={
+            messages:[]
         }
+        this.$input = React.create
     }
-    componentDidMount() {
-        // 在此处与B组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
-         this.props.loaded(this.state.city);
-    }
-    render() {
-        var bCity = this.props.bCity;
-        return (
-            <div id="fromA">
-                {bCity && 
-                    "B comes from " + bCity + "."
-                }
-            </div>
-        )
-    }
-}
-// PeopleB 组件
-class PeopleB extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            city: 'Guangzhou'
+    submit(){
+        if(typeof this.props.send==='function'){ //做一个安全监测
+            .....
+            this.props.send(this.props.name,msg);
         }
+       
     }
-    componentDidMount() {
-        // 在此处与A组件通信，向其传递当前组件的城市名（使用逆向数据流的通信方式）
-        this.props.loaded(this.state.city);
-    }
-    render() {
-        var aCity = this.props.aCity;
-        return (
-            <div id="fromB">
-                {aCity && 
-                    "A comes from " + aCity + "."
-                }
-            </div>
-        )
+    
+    render(){
+        return <button onClick={this.props.onClick}> {this.props.count} </button>
     }
 }
 
-class App extends React.Component {
-    constructor(props) {
+2.  父组件 Chatroom 
+class Chatroom extends React.Component{
+    constructor (props){
         super(props);
-        this.state = {
-            aCity: '',
-            bCity: '',
+        this.state ={
+            messages:[] // message 由子组件提升到父组件 
         }
+        this.sendMsg =   this.sendMsg.bind(this);
     }
-    getCity(cityType, v){
-        if(cityType ==='aCity'){
-            this.setState({
-                 aCity: v
+
+    //sendMsg 也由子组件提升到父组件, 因为这个方法是跟着 message 走的
+    sendMsg(name, content){ 
+        this.setState({message =[]})=> {
+            const time = new Date();
+            const nextMessage = messages.concat();
+            nextMessage.push({name, content, time});
+            return {
+                messages: nextMessage
             }
-            );
-        } else if(cityType ==='bCity'){
-            this.setState({
-                 bCity: v
-            }
-            );
-        }
+        })
     }
-    render() {
-        return (
-            <div>
-                <PeopleA bCity={this.state.bCity} loaded={(value)=>{this.getCity('aCity',value)}} />
-                <PeopleB aCity={this.state.aCity} loaded={(value)=>{this.getCity('bCity',value)}} />
-            </div>
-        )
+    
+    render(){
+        return 
+        <div className="chatroom">
+            {this.props.talkers.map(name =>{
+                <Talker name={name} key ={name}  messages ={this.state.messages} send={this.sendMsg}/>
+            })}
+        </div>
+        
     }
 }
