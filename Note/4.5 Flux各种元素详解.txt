@@ -1,0 +1,36 @@
+L   Flux 元素详解 - Dispatcher 
+一. 概念
+1.  Dispatcher 作用: 控制中心的作用
+2.  特性
+(1) 保持单例
+(2) 接受action, 并把action派发给store
+
+二. Dispatcher 代码实例和作用
+1.  创建 Dispatcher
+在 dispatcher.js 中
+import { Dispatcher } from 'flux';
+export default new Dispatcher();
+
+2.  派发 Action (在点击事件时发生的)
+在 actions.js 中
+Dispatcher.dispatch({
+    type:ActionTypes.ADD_TODO,
+    payload:{
+        text:xxx
+    }
+})
+注: 为什么把这段代码写在action -> 因为如果都写在 dispatch中, 不知道哪里来的action type, 会混乱而且不好管理 
+
+3.  连接 Dispatcher 和 Store
+在 store.js 中
+import {ReduceStore} from 'flux/utils';
+import Dispatcher from './dispatcher';
+class Store extends ReduceStore{
+    constructor (){
+        super(Dispatcher); // 绑定 Dispatcher
+    }
+    reduce(state,action){ // 收到action都会触发 reduce 方法
+        ....
+    }
+    
+}

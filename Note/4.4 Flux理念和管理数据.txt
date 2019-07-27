@@ -1,0 +1,62 @@
+L Flux 设计理论
+一. 概念
+1.  Flux 是一种使得React 应用数据单向流动的架构
+2.  MVC介绍:
+(1) MVC流程: Action -> Controller -> Model -> View (注: 这里的 view 是可以访问别的model 获取 它需要的一些function或数据)
+(2) 缺点: Controller是单一的, Model 可以访问  View, View也可以访问不同的Model获取数据。导致大项目Model和View太混乱。
+
+3.  React 数据流 (没有Flux): 不同的组件有不同的父类，不同组件之间都有联系。导致数据流向复杂，难以开发维护
+
+4.  React的Flux解决方案: 以上两者结合, 更加受限的单向流动
+(1) 提供全局的控制中心 (control center)
+(2) 所有数据都必须上传到控制中心
+(3) 所有数据获取也通过全局的控制中心给出
+总结:   数据总是从源节点流向控制中心, 再流向目标节点
+
+5.  Flux架构图:
+(View -> ) Action -> Dispatcher -> Store -> View 
+
+L 使用 Flux 管理数据
+一. 概念
+1.  Flux 是一个架构而不是框架
+
+二. 代码实现 (用的是React中一种Flux, 但是不是实际应用的框架)
+1.  文件
+(1) actions.js
+a.  提供不同的actionType
+b.  调用 dispatcher 并传递 不同的参数 (包括 actionType 和 数据)
+
+(2) dispatcher.js - 只是导出 Dispatcher 在 flux的lib里
+import { Dispatcher } from 'flux';
+export default new Dispatcher();
+
+(3) store.js (利用了 ReduceStore)
+a.  构造函数中, 绑定 Dispatcher
+b.  初始化所有数据的state
+c.  reduce -> 去处理数据, 返回一个新的state
+    reduce 接受两个参数: state(之前的状态), action 
+
+(4) index.js (用 React 作为View)
+componentDidMount(){
+    //在component挂载后, 添加监听函数
+    this.removeListener = TodoStore.addListener(this.onStoreChange); 
+}
+componentWillUnmount(){
+    //在component要被销毁前, 移除之前所有的监听函数
+    this.removeListener(); 
+}
+onStoreChange(){
+    this.setState({
+        todoList: TodoStore.getState().list
+    })
+}
+
+2.  规范
+(1) dispatcher:
+a.  必须有一个 type: actionTtpe
+b.  payload / data: 搭载 数据的
+
+三. 总结
+1.  中心化控制，改变通过action发出，由(唯一的)dispatcher来分配
+2.  view保持简洁，值需要关心传进的数据。Store的reduce来处理数据逻辑
+3.  数据始终保持单向流动
