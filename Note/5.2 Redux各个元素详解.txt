@@ -1,0 +1,104 @@
+L Redux 元素详解 - Action
+一. 概念
+1.  作用
+(1) Store 的唯一信息来源
+(2) store.dispathch(action)
+
+二. redux 代码实例
+1.  actionCreator.js 中
+// import Dispatcher from './dispatcher'; //不再引入 Dispatcher, 因为已经集成到 store里了
+const ActionTypes={
+    ADD_TODO: 'ADD_TODO'
+}
+export {
+    ActionTypes
+}
+export default{   
+    addTodo:(text)=>({
+        type: ActionTypes.ADD_TODO,
+        payload:{ text }
+    })
+}
+注: a.  和 Flux不同, 我们的Action生成器需要返回Action的对象
+    b.  而且不在action.js 对他们进行派发action , 而就转移到 view中来调用, 如下
+
+2.  index.jsx 中
+import React from 'react';
+import TodoStore from './store';
+import Actions from './action';
+
+export default class ToDoList extends React.Component{
+    addItem(){
+        TodoStore.dispatch(Actions.addTodo(text)); //用到 Store.dispatch 来发出 action
+    }
+}
+-----------------------------------------------------------------------------------------
+L Redux 元素详解 - Reducer
+一. 概念
+1.  作用
+(1) 处理 state 变化的纯函数
+(2) 结构: (state, action) => newState --- 传入 state 和 action. 返回 newState 
+(3) immutable --- state 是不可变的 
+
+二. 代码实例
+//  我们需要直接导出 reducers
+//  reducer必须是 纯函数
+export default(state, action) =>{ // 纯函数
+    switch(action, type){
+        case ActionTypes.ADD_TODO:
+        {
+            const { payload } = action;
+            const {list = []} = state;
+            //为了保证数据的纯净, 都要用拷贝的方式，而不直接改变原先的state
+            const nextList = list.concat([{ // 这里就是复制一个新的数据, 而不去破坏原有state --- immutable的性质
+                id: state.nextId,
+                text: payload.text
+            }]);
+            //  使用 Object.assign 返回新的state.
+            //  他的作用是生成一个新的对象，从后向前覆盖属性
+            //  这里的作用是保留原先state的所有属性，将list更换，并生成一个新的对象
+            return Object.assign({}, state, { // 返回也是一个新的state
+                list： nextList,
+                nextId: state.nextId + 1
+            })
+        }
+        default:
+            return state //如果没有任何对应的actiontype, 必须返回原来的state
+    }
+}
+注: concat 和 Object.assign 方法会常在 Redux被用到
+
+-----------------------------------------------------------------------------------------
+L Redux 元素详解 - Store
+一. 概念
+1.  作用 --- 保存现在状态的数据
+
+二. 代码实例
+1.  创建 Store
+    在 store.js 中
+import {createStore} from 'redux';
+import Reducer from './reducer';
+const initialState ={
+    list:[.....]
+}
+
+// Redux 与 Flux 另一个区别是, store 中已经集成了 Dispatcher, 所以这里只要直接绑定 Store 与 Reducer 就好了
+//  第三个参数是可选, 是增强Store的功能
+export default createStore(Reducer, initialState)
+
+2.  绑定和移除事件, 派发action
+    index.jsx
+    componentDidMount(){
+        TodoStore.subscribe(this.onStoreChange); //传入事件到store里
+    }
+    componentWillUnmount(){
+        TodoStore.unsubscribe(this.onStoreChange); // 移除事件
+    }
+    onStoreChange(){
+        .....
+        const todoList = TodoStore.getState().list; // 获取数据 
+    }
+    addItem(){
+        ......
+         TodoStore.dispatch(Actions.addTodo(text));
+    }
