@@ -32,5 +32,112 @@ class Store extends ReduceStore{
     reduce(state,action){ // 收到action都会触发 reduce 方法
         ....
     }
-    
+}
+-------------------------------------------------------------------------------------
+L   Flux 元素详解 - Store 
+一. 概念
+1.  Store 作用: 用于存储应用中的数据
+2.  特性
+(1) 用于接收action
+(2) 只可被action 修改
+(3) 允许多个实例
+
+二. Store 代码实例和作用
+1.  处理 actions
+在store.js中
+import Dispatcher from './dispatcher';
+import { ActionTypes } from './actions';
+import { ReduceStore } from 'flux/utils';
+class Store extends ReduceStore{
+    constructor(){
+        super(Dispatcher); // 绑定 Dispatcher
+    }
+}
+getInitialState(){ .... } //初始化 定义值
+
+reduce(state, action){ / 收到action都会触发 reduce 方法
+    switch (action.type){
+        case ActionTypes.ADD_TODO;
+        .....
+        return Object.assign({},state,{
+            list: nextList,
+            nextId: state.nextId+1 
+        }) 
+        //注: 用 object.assign的方法去返回新的state, 而不改变原本的state
+        
+        default:
+            return state //如果没有对应的action, 就返回原来的state, 就不是它要处理的action
+    }
+}
+-----------------------------------------------------------------------------------------
+L   Flux 元素详解 - Action
+一. 概念
+1.  Action 作用: 发生的时间
+2.  特性
+(1) 语义化 --- 我们看到action 就能了解是什么事件
+(2) 准确描述的对象
+
+二. Store 代码实例和作用
+1.  派发 Action
+action.js中
+import Dispatcher from './dispatcher';
+
+const ActionTypes={
+    ADD_TODO: 'ADD_TODO'
+}
+//导出事件类型，用于集中管理Actions类型
+export {
+    ActionTypes
+}
+
+//集中管理Actions
+export default{
+    addToDo(text){
+        Dispatcher.dispatch({
+            type: ActionTypes.ADD_TODO, //这个才是正直的action
+            payload:{
+                text
+            }
+        })
+    }
+}
+-----------------------------------------------------------------------------------------
+L   Flux 元素详解 - View
+一. 概念
+1.  View 作用: 展现Stores中的数据形态
+2.  特性
+(1) 可以是任何的前端框架 (一般是 React)
+(2) 和Store 共享数据
+
+二. 流程示例
+1.  View 订阅了Store, 渲染 Store的内容
+2.  当用户按下了"添加"之后, Dispatcher 将发送这个action
+3.  所有Store收到了这个action
+4.  对应的 ToDoStore 除了这个action, 更改了相应的数据
+5.  View 也进行了更新, 做出相应渲染上的改变 
+
+三. View 代码实例和作用
+1.  连接 Store
+index.js中
+import React from 'react';
+import TodoStore from './store';
+import Actions from './action';
+
+export default class ToDoList extends React.Component{
+    componentDidMount(){
+        this.removeListener = TodoStore.addListener(this.onStoreChange); // 监听 Store的变化 
+    }
+
+    componentWillUnmount(){
+        this.removeListener(); //调用这个函数, 将它释放掉 
+    }
+    onStoreChange(){
+        this.setState({
+            todoList: TodoStore.getState().list //Store 更新后, 同步更新组件state 法
+        })
+    }
+    addItem(){
+        const text = this.input.current.value;
+        Actions.addTodo(text);
+    }
 }
