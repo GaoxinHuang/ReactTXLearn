@@ -1,0 +1,26 @@
+L 容器组件(ContainerComponent) 和 傻瓜组件 (DumbComponent)
+一. 概念
+1.  组件做了什么?
+(1) 和Store保持同步: 监听Store的变化, 从Store 中获取数据
+(2) 渲染界面: 根据props 和 state 来渲染界面
+
+2.  容器组件 和 傻瓜组件
+(1) 容器组件 和 傻瓜组件 的定义
+    a.  和Store保持同步 - 容器组件 / 聪明组件 ContainerComponent
+    b.  渲染界面 - 展示组件 / 傻瓜组件  DumbComponent
+
+(2)  Store -> ContainerComponent ->通过 props -> DumbComponent -> UI
+注: 这样就把展示逻辑和数据逻辑区分开
+
+
+L 处理更复杂的数据
+一. 之前的Redux应用的存在问题
+1.  容器组件和傻瓜组件强耦合, 有些多余的代码
+2.  Redux应用只有一个Store, 处处都要 import
+
+二. 处理问题
+1.  通过props传递什么?
+(1) Store 中的state, 容器向核心组件(傻瓜组件)传递数据
+(2) Store 中的dispatch, 核心组件向容器发起行为
+
+三. 原代码 (uncomplete)
