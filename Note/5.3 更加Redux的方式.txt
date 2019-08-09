@@ -7,7 +7,7 @@ L 容器组件(ContainerComponent) 和 傻瓜组件 (DumbComponent)
 2.  容器组件 和 傻瓜组件
 (1) 容器组件 和 傻瓜组件 的定义
     a.  和Store保持同步 - 容器组件 / 聪明组件 ContainerComponent
-    b.  渲染界面 - 展示组件 / 傻瓜组件  DumbComponent
+    b.  渲染界面和反馈输入信息到容器组件 - 展示组件 / 傻瓜组件  DumbComponent
 
 (2)  Store -> ContainerComponent ->通过 props -> DumbComponent -> UI
 注: 这样就把展示逻辑和数据逻辑区分开
@@ -23,4 +23,130 @@ L 处理更复杂的数据
 (1) Store 中的state, 容器向核心组件(傻瓜组件)传递数据
 (2) Store 中的dispatch, 核心组件向容器发起行为
 
-三. 原代码 (uncomplete)
+三. 原代码 
+1.  高阶组件 connect
+function connect(mapStateToProps,mapDispathToProps){
+    return function connectHoc(Component){
+        return class Connect extends React.Component{
+            constructor(props){
+                super(props);
+                this.state=Object.assign({},
+                mapStateToProps(store.getState()),
+                mapDispathToProps(store.dispatch)
+                );
+                this.onStoreChange = this.onStoreChange.bind(this);
+            }
+            componentDidMount(){
+                store.subscribe(this.onStoreChange);
+            }
+            componentWillUnmount(){
+               store.unsubscribe(this.onStoreChange);
+            }
+            onStoreChange(){
+                const state = store.getState();
+                this.getState(mapStateToProps(state));
+            }
+            render(){
+                return <Component {...this.props} {...this.state} />
+            }
+        }
+    }
+}
+
+注: (1) mapStateToProps 和 mapDispathToProps 是两个方法
+    (2) mapStateToProps: 需要哪些数据映射到内部的傻瓜组件里的props里去
+    (3) mapDispathToProps: 把 Dispatch 的能力给到 傻瓜组件
+    (4) store.subscribe(this.onStoreChange) 和 store.unsubscribe(this.onStoreChange) 来订阅观察store的变化. 
+
+2.  mapStateToProps
+function mapStateToProps(state){
+    const { todos } = state;
+    return{
+        todos: todos.list
+    }
+}
+注: mapStateToProps(store.getState()): 从store 得到 state, 传过去
+
+3.  mapDispathToProps
+    function mapDispathToProps(dispatch){
+    return {
+        deleteTodo: id => dispatch(TodoActions.deleteTodo(id))
+    }
+}
+注: mapDispathToProps(store.dispatch): 从store 得到 dispatch, 然后封装后传过去
+
+4.  调用 export default connect(mapStateToProps, mapDispathToProps)(TodoList); 
+
+四. 如何设置全局可访问的Store? (Redux-react 其实已经做好了, 不需要去考虑)
+1.  解决方案: 利用 Context 
+2.  在 React在16.3版本之后提供了新的ContextAPI, 所以需要使用旧的API 
+
+3.  实际代码(在16.3之前, 不实用在项目里)
+(1) Provider
+class Provider extends React.Component{
+    getChildContext(){
+        return {
+            store: this.props.store
+        }
+    }
+    render(){
+        return this.props.children;
+    }
+}
+Provider.childContextTypes={
+    store: PropTypes.object
+}
+
+ReactDOM.render(
+    <Provider store ={Store} >
+        <App />
+    </Provider>
+    document.querySelector('#app')
+);
+
+(2) connect 修改去获取 context
+constructor(props, context){  //从provder里传入context
+    super(props, context);
+    this.state=Object.assign({},
+    mapStateToProps(context.store.getState()),  //是由 context里store
+    mapDispathToProps(context.store.dispatch));  //是由 context里store
+    this.onStoreChange = this.onStoreChange.bind(this);
+}
+componentDidMount(){
+    this.context.store.subscribe(this.onStoreChange);  //是由 context里store
+}
+componentWillUnmount(){
+    this.context.store.unsubscribe(this.onStoreChange);  //是由 context里store
+}
+onStoreChange(){
+    const state = this.context.store.getState(); //是由 context里store
+    this.getState(mapStateToProps(state));
+}
+render(){
+    return <Component {...this.props} {...this.state} />
+    }
+}
+
+
+L 使用 react-redux
+一. 概念
+1.  react-redux介绍 (还是上个L里的,只是写到这里了): 
+(1) 实际图: Store -> Provider [App [connect(mapStateToProps,mapDispathToProps)(Component),connect(mapStateToProps,mapDispathToProps)(Component)]]
+(2) 提供了: Provider 和 connect
+(3) connect 使用基本不变, Provider 变化如下
+a.  store.js
+import{ createStore} from 'redux';
+import Reducer from './reducers';
+export default createStore(Reducer);
+
+b.  index.js
+import { Provider } from 'react-redux';
+import Store from './store';
+import App from 'Components/app';
+
+ReactDOM.render(
+    <Provider store ={store}>
+        <App />
+    </Provider>
+)
+
