@@ -150,3 +150,138 @@ ReactDOM.render(
     </Provider>
 )
 
+二. 文件结构
+1.  最外层
+store.js
+index.jsx
+
+2.  components: dumb component (傻瓜组件) (注: app也要这个傻瓜组件里)
+3.  containers： 容器组件
+4.  reducers: reducers 文件
+
+三. 实际代码
+1.  app.jsx (在 components 下, 包含了其他containers 组件。 具体代码就不写了)
+
+2.  index.jsx (最外层)
+import { Provider } from 'react-redux';
+import Store from './store';
+import App from 'Components/app';
+
+ReactDOM.render(
+    <Provider store ={store}>
+        <App />
+    </Provider>
+)
+
+3.  store.js (最外层)
+import{ createStore} from 'redux';
+import Reducer from './reducers';
+export default createStore(Reducer, window._REDUX_DEVTOOLS_EXTENSION_ && window._REDUX_DEVTOOLS_EXTENSION_());
+//注: 后面那window._REDUX_DEVTOOLS_EXTENSION_() 都是 Redux 的 Debug 工具
+
+4.  filterTodoList.js (containers底下)
+//@param state 就是 redux中的state, @return 返回一个映射对象
+function mapStateToProps(state){
+//只从state中取一些需要的数据即可
+    const{
+        todo,
+        bisibility
+    } = state;
+    return {
+        todos:filterTodos(todos.list, visibility.filter)
+    }
+}
+
+//@param dispatch 就是 redux中的dispatch, @return 返回一个映射对象
+function mapDispathToProps(dispatch){ 
+    //传递了删除和切换的能力.
+    //注: 只传递必须的功能
+    return {
+        toggleTodo: id => dispatch(TodoActions.toggleTodo(id)),
+        deleteTodo: id => dispatch(TodoActions.deleteTodo(id))
+    }
+}
+export defualt connect(mapStateToProps, mapDispathToProps)(TodoList);
+
+5.  todoList-> index.jsx (可以写成一个无状态组件)
+class TodoList extends React.Component{
+    render(){
+        const {todos, toggleTodo, deleteTodo } = this.props; 
+        return <div>
+            <ul>{ todos.map((item)=>(
+                <TodoItem key={item.id} text={item.text} .... onToggle={()=>toggleTodo(item.id)} onDelete={()=>deleteTodo(item.id)}  
+            ))}</ul>
+        </div>
+    }
+    注: (1) this.props 就可以直接获取到 filterTodoList传给 store, 然后转给 TodoList的
+        (2) 这里又导入 TodoItem, 接着往下看
+}
+
+TodoList.propTypes={ //注： 为了规范, 傻瓜组件需要写这个
+    todos:....,
+    toggleTodo: PropTypes.func.isRequired,
+    deleteTodo: PropTypes.func.isRequired
+};       
+
+6.  todoItem-> index.jsx
+.....
+import className from 'classnames'; //好像是什么包
+import './index.less'; 
+class TodoItem extends React.Component{
+    render(){
+        const {text, done, onToggle, onDelete } = this.props;
+        const itemClass = className{{'todo-item':true, 'active':done }};
+        return <li onClick={onToggle} >
+            <span>{text} </span>
+            <span onClick={onDelete}> deleted </span>
+        </li>
+    }
+}
+
+四. 介绍了 redux的 debug工具。 还是Chrome 需要安装redux 扩展 
+1.  可以利用skip 和jump 去查看不同时期的状态
+
+L Redux DevTools (资料)
+一. 安装 Redux DevTools 浏览器插件
+打开谷歌的网上应用店或者火狐的附件组件商店），搜索 redux devtools，直接安装即可。
+
+二. 代码配置
+1.  不含中间件
+const store = createStore(
+   reducer, 
+   /* preloadedState, */
+    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+ );
+
+2. Store 包含中间件，配置如下：
+import { createStore, applyMiddleware, compose } from 'redux';
+    const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+    const store = createStore(reducer, /* preloadedState, */ composeEnhancers(
+    applyMiddleware(...middleware)
+  ));
+
+注: window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ 函数同样来源于 Redux DevTools 插件，当插件未安装时，直接使用该方法会导致报错，
+    所有这里加多了一层保护，当 window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ 值为 false 时，使用 Redux 提供的 compose 方法作为替代。
+
+三. 使用 redux-devtools-extension 包进行配置的代码
+1.  npm install --save-dev redux-devtools-extension
+
+2.1 不含中间件
+import { createStore } from 'redux';
+import { devToolsEnhancer } from 'redux-devtools-extension';
+const store = createStore(
+    reducer, 
+    /* preloadedState, */
+    devToolsEnhancer()
+);
+
+2.2  Store 包含中间件，配置如下
+import { createStore, applyMiddleware } from 'redux';
+import { composeWithDevTools } from 'redux-devtools-extension';
+const store = createStore(
+    reducer, 
+    /* preloadedState, */
+    composeWithDevTools(
+      applyMiddleware(...middleware)
+    )
+);
