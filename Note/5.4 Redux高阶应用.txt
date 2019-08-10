@@ -1,1 +1,265 @@
 L Redux中间件
+一. 概念
+1.  哪里去扩展Redux的Middleware: Action Creator -> Action -> Middleware#1 -> Middleware#2 -> Reducers
+2.  applyMiddleware(mw1, mw2) 执行顺序: Action Creator -> Action -> mw1 -> mw2 -> Reducers
+3.  流程图的理解:
+View->ActionCreator-> Middlewares包裹 Dispatcher -> Reducers (获取 Store的信息) -> State -> View
+4.  基本构造(高阶组件): ({getState, dispatch}) => next => action => next(action);
+注: 返回值是 next(action), 这个返回值才能传递到下一个中间件  (函数式编程 -> 柯里化方式)
+
+二. 代码示例
+1.  Redux源码中 applyMiddleware的实现
+export default function applyMiddleware(...middlewares){
+    return createStore => (...args) =>{
+        const store =createStore(...args)
+        let dispatch =()=>{
+            throw new Error('...');
+        }
+    }
+    //middleWareAPI 是获取 getState 和 dispatch能力
+    const middleWareAPI = { 
+        getState: store.getState,
+        dispatch: (...args) => dispatch(...args)
+    }
+    //chain就是一个链式的传入
+    const chain = middlewares.map(middleware => middleware(middleWareAPI));
+    //右边函数作为左边的入参, 用compose 重新赋值, 一个传一个(next(action)) 
+    dispatch = compose (...chain)(store.dispatch) 
+    return { ...store, dispatch }
+}
+
+2.  中间模板
+fuction middleware({getState, dispatch}){
+    return function(next){ //保存 next
+        return function (action){
+            return next(action);
+        }
+    }
+}
+
+三. 代码实际使用
+import {createStore, applyMiddleware} from 'redux';
+import Reducer from './reducers';
+
+//authorMiddleware 是给所有的action 加上 author
+const authorMiddleware=({getState}) => next => action =>{
+    action.author ='chiehyang';
+    return next(action); //一定要返回这个
+}
+//loggerMiddleware 创建 log来打印中间件的状态
+const loggerMiddleware=({getState}) => next => action =>{
+    console.log('prev state', getState()); 
+    console.log('action', action);
+    const returnValue = next(action); // 跑完 next(action)
+    console.log('next state', getState()); //
+    return returnValue;
+}
+export default createStore(Reducer, applyMiddleware(authorMiddleware, loggerMiddleware));
+注: 1.  应用中间件
+    2.  前面的中间件会先调用, 后面的会调用
+    3.  所以loggerMiddleware需要放后面, 因为前面的中间件可能会有安全处理, logger 要记录的是最终的有效的
+
+
+L 分解AJAX操作
+一. 概念
+1.  为什么要分解AJAX?
+(1) Redux 中的action是同步的，收到Action之后数据就会改变
+(2) AJAX是异步的，等待服务器返回后数据才会改变
+(3) 所以, 将异步的AJAX拆解为同步的状态变化过程
+
+2.  Redux的解决方案的步骤如下
+(1) 在 ActionCreator 中不再返回简单的Action对象，而是返回一个函数(thunk) 或 promise(Redux Promise)
+(2) 使用中间件来解析特殊类型的Action对象，自动拆解为同步的简单Action
+
+3.  Redux的两个解决方案的lib: thunk (返回一个函数) 和 Redux Promise (返回一个Promise)
+
+二. 代码示例
+1.  React中的普通使用  
+componentDidMount(){
+    const api = 'www.xxx.com/api/get';
+    dispatch(requestStart(api)); //对于开始读取数据的操作
+    axios.get(api)
+        .then(res=> dispatch(requestSuccess(res.data)))  //对于成功读取数据的操作
+        .catch (error => dispatch(requestFailure(error))) //对于失败读取数据的操作
+}
+
+2.  Redux的解决方案 (下面有thunk的, 用于实际操作的)
+import axios from 'axios';
+const ActionType={
+    REQUEST_START:'GET_CONFIG/REQUEST_START',
+    REQUEST_SUCCESS:'GET_CONFIG/REQUEST_SUCCESS',
+    REQUEST_FAILURE:'GET_CONFIG/REQUEST_FAILURE'
+}
+export {ActionTypes}
+const requestStart=()=>({
+    type: ActionTypes.REQUEST_START
+});
+const requestSuccess=(result)=>({
+    type: ActionTypes.REQUEST_SUCCESS,
+    payload:{result}
+});
+const requestFailure=(error)=>({
+    type: ActionTypes.REQUEST_FAILURE,
+    payload:{error}
+});
+
+const URL='/getConfig';
+export default{
+    loadInitData: ()=>dispatch=>{ // 这个函数dispatch的参数
+        dispatch(requestStart()); //
+        axios.get(URL)
+        .then(res=> dispatch(requestSuccess(res.data))) 
+        .catch (error => dispatch(requestFailure(error)))
+    }
+}
+注: (1) export的是一个函数, 而且是 dispatch  
+
+3.  Redux的解决方案 - thunk (教程就使用这个)
+(1) thunk 源代码
+function createThunkMiddleware(extra Argument){
+    return ({dispatch, getState}) => next => action =>{
+        if(typeof action === 'function'){
+            return action(dispatch, getState, extraArgument); 
+            //注: 赋予函数action更强的呢里, 允许它使用 dispatch 和 getState
+        }
+        return next(action); 
+    };
+}
+const thunk = createThunkMiddleware();
+thunk.withExtraArgument =  createThunkMiddleware;
+export default thunk;
+
+(2) thunk 的实际使用
+a.  smartApp.js (container)
+import { connect } from 'react-redux';
+import App from 'components/app';
+import getConfigActions from 'actions/getConfigActions';
+//这样App 有了记录自己状态的能力, 并且让它在被挂载之后去发出ajax请求拉取数据
+export default connect(
+    ({status})=>({status}), 
+    dispatch => ({loadInitData: ()=> dispatch(GetConfigActions.loadInitData())}))(App);
+
+b.  app.jsx
+class App extends React.Component{
+    componentDidMount(){
+        this.props.loadInitData();
+    }
+    render(){
+        const {status} = this.props;
+        let content = null;
+        if(status.isLoading){
+            content= <p>loading....</p>
+        }else if(status.isFail){
+            content= <p>loading failure</p>
+        }else if(status.isSuccess){
+            content = [
+                .... (实际要展示的)
+            ];
+        }
+        return <div>{content}</div>
+    }
+}
+
+c.  getConfigActions.js
+import axios from 'axios';
+const ActionType={
+    REQUEST_START:'GET_CONFIG/REQUEST_START',
+    REQUEST_SUCCESS:'GET_CONFIG/REQUEST_SUCCESS',
+    REQUEST_FAILURE:'GET_CONFIG/REQUEST_FAILURE'
+}
+export {ActionTypes}
+//下面是三个简单函数 ActionCreator
+const requestStart=()=>({
+    type: ActionTypes.REQUEST_START
+});
+const requestSuccess=(result)=>({
+    type: ActionTypes.REQUEST_SUCCESS,
+    payload:{result}
+});
+const requestFailure=(error)=>({
+    type: ActionTypes.REQUEST_FAILURE,
+    payload:{error}
+});
+
+const URL='/getConfig';
+export default{
+    loadInitData: ()=> async (dispatch, getState, args )=>{ 
+        dispatch(requestStart());
+        try{
+            const res = await axios.get(URL);
+            dispatch(requestSuccess(res.data));
+        }catch (error){
+            dispatch(requestFailure(error))
+        }
+    }
+}
+注: 1.  参数二就是 getState， 参数三是额外的参数。没有使用，所以原教程没有使用
+2.  这里我们使用ES7的async/await 语法，可以改成异步函数调用的形式如下:
+    loadInitData: ()=>dispatch=>{ 
+        dispatch(requestStart()); 
+        axios.get(URL).then(res=> dispatch(requestSuccess(res.data))) 
+        .catch (error => dispatch(requestFailure(error)))
+    }
+
+d.  reducers 的代码 (statusReducers.js)
+import { ActionTypes} from 'actions/getConfigActions';
+//这reducer里, 我们只负责处理app的加载状态, 具体数据我们在具体的reducer中处理
+export default (state ={
+    isLoading:false,
+    isSuccess:false,
+    isFail:false
+}, action) =>{
+    switch (action.type){
+        case ActionTypes.REQUEST_START:
+        {
+            return Object.assign({}, state, {
+                isLoading:true,
+                isSuccess:false,
+                isFail:false
+            });
+        }
+        case ActionTypes.REQUEST_SUCCESS:
+        {
+            return Object.assign({}, state, {
+                isLoading:true,
+                isSuccess:true,
+                isFail:false
+            });
+        }
+        ......
+        default:
+            return state;
+    }
+}
+
+e.  reducers 处理请求成功的代码 (todoReducers.js)
+//需要监听请求成功的action
+.....
+// 当 ajax 请求成功回来之后, 我们来改变它的数据
+case GetConfigActionTypes.REQUEST_SUCCESS:
+{
+    ....
+    return Object.assign({}, state, {
+        ...(新的state)
+    })
+}
+
+f.  store 中间件的配置
+store.js
+import {compose, createStore} from 'redux';
+import trunkMiddleware from 'redux-thunk'; 
+import {createLogger} from 'redux-logger';
+import Reducer from './reducers';
+
+//自定的中间件
+const myMiddleware =({getState}) => next => action =>{
+    action.author = 'xxx';
+    action.timestamp =new Date();
+    return next(action);
+}
+const middlewares = [trunkMiddleware, myMiddleware]; // 加入了我们的中间件
+if(process.env.NODE_ENV==='development'){
+    middlewares.push(createLogger()); //这是调用 redux logger的库
+}
+const composeEnhancer = window._REDUX_DEVTOOLS_EXTENSION_COMPOSE_|| compose;
+export default createStore(Reducer, composeEnhancer(applyMiddleware(...middlewares)));
