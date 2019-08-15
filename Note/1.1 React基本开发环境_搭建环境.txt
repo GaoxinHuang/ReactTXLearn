@@ -51,6 +51,22 @@ devDependencies: babel, webpack,
 	"presets":["es2015", "react"]
 }
 
+(2.1)	新React更新, babel 配置也跟着更新, 出了babel 7 (package.json也变化了)
+{
+	"presets":["@bable/preset-env", "@bable/preset-react"],
+	"plugins":[
+		"@bable/plugin-syntax-object-rest-spread",
+		"@bable/plugin-syntax-dynamic-import",
+		[
+			"@bable/plugin-proposal-decorators",
+			{
+				"legacy": true
+			}
+		],
+		"@bable/plugin-proposal-class-properties",
+	]
+}
+
 (3)	webpack.config.js
 a.	entry (项目入口)
 b.	output (指明打包以后会生成什么文件)

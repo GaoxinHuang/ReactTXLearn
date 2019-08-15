@@ -1,0 +1,126 @@
+L 网页的生成过程
+一. 网页生成的流程
+1.  HTML 文档   -> (Parse HTML)   -> DOM 树
+                -> CSS样式表    -> (Recalculate Style) ->   CSSOM 树
+
+2.  DOM树 和 CSSOM 树 -> attachment -> 渲染树
+
+3.  渲染树  -> (排版(flow)) -> 布局 -> (绘制 (paint)) -> 页面
+总结流程:
+HTML 文档 -> DOM树 和 CSSOM 树 -> 渲染树 -> 布局 -> 页面
+
+二. 网页资源的分布 和 为什么这么卡
+1.  在js 或 用户 改变 DOM树 和 CSSOM 树后， 就要重新走一遍以上的流程
+2.  重新排列 叫做 重排(reflow)。    重新绘制 叫做 重绘(repaint)
+3.  为什么会这么卡: 在构成渲染树之后就开始非常消耗资源，
+                因为在构成渲染树 之前的所有操作都只是 解析文档
+                所以网页优化的核心目的就是减少重排和重绘的次数
+
+      
+L   shouldComponentUpdate
+一. 概念
+1.  props 和 state 的更新就会触发 shouldComponentUpdate
+2.  什么时候数据更新而组件不需要更新: 存在数据更新，却没有更新组件
+
+二. 语法 
+1.  装饰器的语法 - 用于高级组件去套组件
+代码展示：
+@updateLogger
+class Name extends React.Component{ .... }
+注：   这就是就可以用 替代  const Name = updateLogger(Name); export Name
+
+三. 代码演示 什么时候 数据更新，而不用更新组件 
+0.  updateLogger 高阶组件代码展示
+export default (Component) => class extends Component {
+    componentDidUpdate(preProps){
+        console.log('update');
+    }
+}
+
+1.  nameNeverChange.jsx - 名字永远不变的代码案例
+(1) Name 组件
+@updateLogger //注: 这个只挂在 Name这个component上
+class Name extends React.Component{
+    render(){   return <p>I am {this.props.person.name} </p>} //将整个person 都传递过来了
+}
+
+(2) 父组件
+class SameObject extends React.Component{
+    state ={person:{name:'Groot',age:0}};
+    growUp=()=>{ this.setState((prevState)=>({
+        person:{
+            name: preState:person.name, //name 不会发生变化，但是还是被调用了
+            age:preState.person.age + 1
+        }}));}
+
+    render(){
+        return <div>
+            <button onClick={this.growUp} > grow up </button>
+            <Name person={this.state.person} /> 
+            <p> I am {this.state.person.age} year old. </p>
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+2.  ObjectInRender.jsx --- 申明Object代码 在 render里
+(1) Name 组件
+@updateLogger
+class IAmGroot extends React.Component{
+    render(){   return <p>I am Groot. </p> } //IAmGroot基本上是静态组件
+}
+
+(2) 父组件
+class SameObject extends React.Component{
+    state ={age:0};
+    growUp=()=>{ this.setState((prevState)=>({
+        person:{
+            age:preState.person.age + 1
+        }}));}
+
+    render(){
+        const style = {color: 'red' }; //注:render方法里申明style, 而且 style不变
+        return <div style={style}>
+            <button onClick={this.growUp} > grow up </button>
+            <IAmGroot /> 
+            <p> I am {this.state.person.age} year old. </p>
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+3.  SetState() 里面 设 empty 的代码演示
+class SameObject extends React.Component{
+    state ={age:0};
+    growUp=()=>{ this.setState({}); } // 注:setState里面是 empty
+
+    render(){
+        const style = {color: 'red' }; 
+        return <div style={style}>
+            <button onClick={this.growUp} > grow up </button>
+            <p>I am Groot. </p>
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+四. 总结
+1.  规避的情况
+(1) 子组件无需要整个object，但是还是被传递过来了,导致这个object更新，子组件以为object更新了，所以就更新了 
+比如 
+class Name extends React.Component{
+    render(){   return <p>I am {this.props.person.name} </p>} //将整个person 都传递过来了
+}
+
+(2) 在 render 申明 新的object
+
+(3) 调用this.setState的参数为空的object, 比如 this.setState({})
+
+2. 可维护组件的法则 
+(1) 合理划分组件粒度：不要把所有的数据都放在同一个组件里，导致任何数据更新都会更新所有组件。
+                    
+(2) 迪米特法则: 子组件只接受和自己相关的属性，尽量不要图省事给子组件传递无关的数据。
+                比如案例一，只需要传递name，而且不是把整个person传给子组件，导致无需更新的，还是更新了。
+
+(3) 合并setState操作:   将所有 setState 当做一个 批量处理的操作来用， 不需要连续调用两三次。
+                    而是 将要执行的操作进行合并。然后统一调用一次 setState
