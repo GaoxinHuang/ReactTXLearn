@@ -1,0 +1,28 @@
+L Pure Render
+一. 概念
+1.  什么是Pure Render:
+(1) 纯函数: if x1=x2, then f(x1) = f(x2)
+(2) Pure Render: if prePros = nextPros & prevState = nextState. then?
+(3) 用途:
+shouldComponentUpdate(nextPros, nextState){
+    return !isEqual(this.pros, nextPros) || !isEqual(this.state, nextState);
+}
+注: 因为 state 和 pros 都是 object，所以isEqual必须是deep compare, 但是其他很难做到这一点
+
+2.  React 官方提供的 react的 pure render的实现
+(1) 类组件: react-addons-pure-render-mixin (旧版 mixin语法) (注：应用 class之后， 这个就不支持了)
+(2) 类组件: React.PureComponent (React 15.3)
+(3) 函数组件: React.memo (React 16.6) (注：针对函数组件 --- 没有生命周期，使用时和PureComponent类似，函数组件只要这一层memo即可)
+
+二. PureComponent 源码解释
+let shouldUpdate = true;
+if(this._forcedUpdate){ //注: forced Update 强制刷新 
+    shouldUpdate = true;
+    this._forcedUpdate = false;
+} else if (typeof this._instance.shouldComponentUpdate === 'function'){
+    shouldUpdate = !!this._instance.shouldComponentUpdate(props,state,context); // shouldComponentUpdate 可以被我们重写, 就像我们平时使用React.Component一样
+} else if(typ.prototype && type.prototype.inPureReactComponent){
+    shouldUpdate = !shallowEqual(oldPros,pros) || !shallowEqual(oldState, state);
+    //注: 这里是浅比较, 所以不够完善
+}
+注: React.memo 基本上和 PureComponent 一模一样, 就是可以重写 shouldComponentUpdate 或 浅比较
