@@ -26,3 +26,153 @@ if(this._forcedUpdate){ //注: forced Update 强制刷新
     //注: 这里是浅比较, 所以不够完善
 }
 注: React.memo 基本上和 PureComponent 一模一样, 就是可以重写 shouldComponentUpdate 或 浅比较
+--------------------------------------------------------------------------------------------------
+L PureComponent 使用技巧
+一. PureComponent 使用注意点
+1.  可变的复杂类型使用拷贝的方式来更新
+- 因为复杂类型里面值改了，地址不变，PureComponent以为它没有变化就不会更新
+
+2.  不变的复杂类型不要在render 方法内声明 
+- 因为在render声明对象，就会分配一个新的地址。所以每次PureComponent都会以为新的东西，所以都会更新
+
+3.  用默认props 代替 "或空"
+- 传递props到子组件时 带有或空的方法。但凡props 里的参数为空，只要是为空，就算上次和这次都是空，子组件都会render
+    这样也会和2一样，为空时，就申明一个空的值，就变向生成一个新的地址。
+
+4.  在构造函数中绑定方法或使用箭头函数来绑定
+- 最好避免在render里绑定this
+
+二. 实际操作情况
+0.  updateLogger 高阶组件代码展示
+export default (Component) => class extends Component {
+    componentDidUpdate(preProps){
+        console.log('update');
+    }
+}
+
+1.  List.jsx - 复杂类型应该拷贝值，而不是复杂类型直接传递值
+(1) 错误代码的演示
+@updateLogger
+class SameObject extends React.PureComponent{
+    state ={list:[0]};
+    push =()=>{
+        this.setState({list})=>{
+            list.push(list.length);
+//注: 这里的 list.push() 添加array里面的东西，但是地址不变。所以还是不会render
+        }
+        return list;
+    }
+    render(){
+        return <div>
+            <button onClick={this.push} > Push </button>
+        </div>
+    }
+}
+export default SameObject; 
+
+(2) 修复代码的演示
+push = () =>{
+    const newList = list.concat(); //拷贝了这个list，就会产生新的地址
+    newList.push(list.length);
+    return {
+        list: newList
+    }
+}
+
+2.  在 render里，不应该申明Object代码 
+(1) 错误代码演示
+a IAmGroot 组件 (子组件)
+@updateLogger
+class IAmGroot extends React.PureComponent{
+    render(){   return <p style={this.props.style}>I am Groot. </p> } 
+}
+
+b 父组件
+class SameObject extends React.Component{
+    state ={age:0};
+    growUp=()=>{ this.setState((prevState)=>({
+        person:{
+            age:preState.person.age + 1
+        }}));}
+
+    render(){
+        const style = {color: 'red' }; 
+        return <div> 
+            <button onClick={this.growUp} > grow up </button>
+            <IAmGroot style={style} />  
+            //注:render方法里申明style, 每次都会给一个新的地址，导致每次子组件以为传过来都是新的，
+                所以尽管用了PureComponent，子组件每次都会render
+            <p> I am {this.state.person.age} year old. </p>
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+(2) 修复代码的演示 - 将这个定义放到 class上。等于定义的常量
+const style = {color: 'red'};
+class SameObject extends React.Component{ .... }
+
+3.  传递props到子组件时 不应该 带有或空的方法。但凡props 里的参数为空，只要是为空，
+    就算上次和这次都是空，子组件每次都会render
+(1) 错误代码演示
+a IAmGroot 组件 (子组件)
+@updateLogger
+class IAmGroot extends React.PureComponent{
+    render(){   return <p style={this.props.style}>I am Groot. </p> } 
+}
+
+b 父组件
+class SameObject extends React.Component{
+    state ={age:0};
+    growUp=()=>{ this.setState((prevState)=>({
+        person:{
+            age:preState.person.age + 1
+        }}));}
+
+    render(){
+        return <div> 
+            <button onClick={this.growUp} > grow up </button>
+            <IAmGroot style={this.style || {}} />  
+            //注:这里以防this.style为空, 就加了一个 ||{}, 所以当为空时，就会等于申明一个 {} 
+            //所以尽管用了PureComponent，只要是为空，就算上次和这次都是空，子组件每次都会render
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+(2) 修复代码的演示 --- 在子组件里加个默认值，移除原本的或空的值
+IAmGroot 组件 (子组件)
+//@updateLogger //因为加了一个 defaultProps,装饰器的语法就不能用了
+class IAmGroot extends React.PureComponent{
+    render(){   return <p style={this.props.style}>I am Groot. </p> } 
+}
+IAmGroot.defaultProps = { style:{} }
+
+const UpdateChildren = updateLogger(IAmGroot); //以后就用 UpdateChildren 作为子组件
+
+4.  不应该在 render里用 bind(this)，因为默认也是重新生成一个地址值去指向 this
+(1) 错误代码演示
+class SameObject extends React.Component{
+    state ={age:0};
+    growUp(){ 
+        this.setState((prevState)=>({
+        person:{
+            age:preState.person.age + 1
+        }}));}
+
+    render(){
+        const style = {color: 'red' }; 
+        return <div> 
+            <button onClick={this.growUp.bind(this)} > grow up </button>
+            <p> I am {this.state.person.age} year old. </p>
+        </div>
+    }
+}
+export default SameObject; //最终展示是这个组件
+
+(2) 修复代码的演示 --- 在子组件里加个默认值，移除原本的或空的值
+growUp = () => { //改成 箭头函数即可,移除render里的 bind(this)
+    ....
+}
+
+总结
