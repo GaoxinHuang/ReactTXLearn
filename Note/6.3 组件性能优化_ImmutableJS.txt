@@ -1,0 +1,63 @@
+L   ImmutableJS
+一. 概念
+1.  Immutable: 就是一经创建就不再变化了，每次修改都是新的对象，而且不是原来的对象
+2.  作用: 对于 javascript object(注: Array 也属于 obj) 就能比较出差距了
+3.  ImmutableJS 比较方式： 是通过 hashcode 和 新地址 比较
+4.  JS Object 过去方式: 就是转成字符串，然后进行比较。但是这样比较消耗资源
+
+二. 代码演示
+1.  immutable 的 对象 比较
+import immutable from 'immutable';
+//....  
+class List extends React.Component{
+    state={
+        list:immutable.List([0]) 
+        //注: 用 immutable 去申明它, 这样它就不是数组了，而是 immutable的list。
+        //  所以对这个list做任何操作都会发生变化
+    }
+    shouldComponentUpdate(nextProps, nextState){
+        return !immutable.is(nextState.list, this.state.list);
+        //注: 这里用 immutable来比较 
+    }
+    push =()=>{
+        this.setState(({list})=>({
+            list:list.push(list.size)
+        }))
+    }
+    render(){
+        return <div>
+            <button onClick={this.push}> </button>
+            <div>{this.state.list.toJS().join()}</div> 
+            //注: immutable的取值方式就是 list.toJS() 就是转成 普通 javascrip 的对象
+        </div>
+    }
+}
+
+2.  immutable 地址
+(1) 子组件 -- 主要是用了 immutable, 所以这里 子组件不会 render
+class ChildrenComponent extends React.Component{
+    shouldComponentUpdate(nextProps, nextState){
+        return !immutable.is(nextProps.style, this.props.style);
+    }
+    render(){
+        return <p style={this.props.style.toJS()}> OK </p>
+         //注: immutable的取值方式就是 xxx.toJS() 就是转成 普通 javascrip 的对象
+    }
+
+}
+
+(2) 父组件
+import immutable from 'immutable';
+//....  
+class List extends React.Component{
+
+    render(){
+        const style = immutable.Map({color:'red'}); 
+        //注：这里只是展示imutable的功能。平时不会把申明写在 render里，浪费性能
+        // immutable.Map 就是申明对象
+        return <div>
+            <ChildrenComponent style={style}> /> 
+            //注: 用了 immutable, 所以这里 子组件不会 render
+        </div>
+    }
+}
