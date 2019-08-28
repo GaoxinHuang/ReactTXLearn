@@ -1,0 +1,101 @@
+L 代码分割
+一. 概念
+1.  index.bundle.js 无优化拥有什么:
+(1) React (2) ReactDom (3) Main 和 index.less (4) Aside (5) Content (6) List (7) Item
+
+2.  不代码分离的优缺点:
+(1) 优点:只做一次请求就能把所有资源导入进来
+(2) 缺点:第一次就加载全部，把没有必要的也加载进来。导致等待时间过长，白屏时间太长
+
+3.  index.bundle.js 特点规划
+(1) 不易变的: (1) React (2)ReactDom - 部署在cdn上，或走缓存或者 302
+(2) 首屏没有使用: (5) Content - 延迟加载
+
+二. 代码的按需加载
+(1) require.ensure()
+(2) 动态 import() - 推荐, 不是只是平时我们用的，实际上如下
+import(/* webpackChunkName:"[request]" */ `../pages/page${pageIndex}`)
+注: a.  动态import是由webpack去做的，这里的注释就是告诉 webpack 传递信息 叫做  
+    b.  ${pageIndex} 这是有点像 optional参数
+
+三. 实际代码操作
+1.  添加 webpack-bundle-analyzer 
+(可选, 就是添加一个webpack分析，可以分析打包出来的文件包括什么模块，而且多大)
+(1) 添加了 webpack.analyze.config.js
+(2) 在package.json 里添加了 
+    "scripts":{ "webpack --config webpack.analyze.config.js" }
+
+2.  实际代码
+(1).    webpack.config.js
+module.exports={
+    ......
+    output:{
+        ....,
+        chunkFilename: '[name].chunk.js' //这样写就是可以根据不同文件名，生成不同的文件
+    },
+    plugins:[
+        new HtmlWebpackPlugin({ 
+            filename: 'index.html',
+            template:path.join(_dirname,'./index.html'),
+            chunks:['index']
+        })
+    ],
+    //注: 因为下面外部引用做的，这个插件就是会把我们的业务代码插入到index.html下面, 保证它运行顺序是对的
+
+    externals:{ //这个参数表示，我们在引入以下的东西，不再从内部 node_modules里打包加载了，而是从外部引入
+        "react":'React',
+        "react-dom":'ReactDom',
+        "redux":'Redux',
+        "react-router-dom":'ReactRouterDOM'
+    }
+}
+
+(2) index.html 修改它去手动写上导入包的路径
+<body>
+<div id="app"></div>
+<script corssorigin src="https:unpkg.com/react/umd/react/development.js" > </script>
+..react-dom...
+..redux...
+..react-router-dom...
+</body>
+注： 顺序也是有讲究的
+
+(2).    父类的组件
+import Loadable from 'react-loadable'; 
+//注: 和16.6的react-lazy很相似,但是只是试验品。 Loadable就是为了进行动态加载
+
+import Loading from './loading'; //展示不同的加载页面
+
+render(){
+    const {pageIndex} = this.state;
+    const Page = Loadable({
+        async loader(){
+            const module = await import(/* webpackChunkName:"[request]" */ `../pages/page${pageIndex}`);
+            //注:以上就是动态加载, 但是因为是 pages/page/${pageIndex}, 
+            //所以就会导致所有 pageXXXX都会被加载, 需要注意命名, 比如用 page_${pageIndex}
+             
+            await sleep(); //只是为了展示效果
+            return module.default;//注：这个就能加到 default 的component 
+        },
+        loading:Loading
+    })       
+    return <div className="app">
+    ...
+    <div className="page-container"><Page /> </div>
+    </div>
+}
+
+(3) loading.jsx - 定义用 lazy 加载时， 所展示的 正在加载和出现错误的页面
+import React from 'react';
+const LoadingPage = <div>Loading...</div>
+const ErrorPage = <div>Error...</div>
+export default React.memo(({isLoading, error}) =>{
+    if(isLoading){
+        return LoadingPage;
+    }else if(error){
+        console.error(error);
+        return ErrorPage;
+    }else {
+        return null
+    }
+});
