@@ -44,7 +44,7 @@ L Redux 元素详解 - Reducer
 //  我们需要直接导出 reducers
 //  reducer必须是 纯函数
 export default(state, action) =>{ // 纯函数
-    switch(action, type){
+    switch(action.type){
         case ActionTypes.ADD_TODO:
         {
             const { payload } = action;
