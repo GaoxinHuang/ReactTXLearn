@@ -69,4 +69,4 @@ webpack.config.js 中
 devServer:{
     historyApiFallback : true
 }
-注: 实际服务器环境如果不好改造，就不能用 HashRouter
+注: 实际服务器环境如果不好改造，就不能用 BrowserRouter
