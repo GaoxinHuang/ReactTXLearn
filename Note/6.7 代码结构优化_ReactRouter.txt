@@ -1,0 +1,72 @@
+一. ReactRouter 作用
+ReactRouter 解析URL 去匹配到路由规则，然后进行页面变化
+
+二. 路由表结构理解
+<HashRouter>  //注：->这个就是路由器, Router
+    <Route path="/" component={Main} > //每个Route都是一条路由表 
+        <Route path="/content/:id" component={Content} />
+    </Route>
+</HashRouter>
+
+三. V4的版本四种常见 Router - 
+1.  BrowserRouter(常用): 利用 HTML5history API 记录路径  
+2.  HashRouter(常用): 利用 hash 记录路径
+3.  MemoryRouter(不常用): 利用内存记录路径
+4.  StaticRouter(不常用): 路径不会改变 
+注: V2和V3 没有上面的，只有一个Router。大多人都会自己去写以上，就是把history写出来
+
+四. 代码展示
+app.jsx
+import {HashRouter as Router, Switch, Route, Redirect, Link} from 'react-router-dom';
+注: 1. Switch 被包括的多个Route，只能匹配一次
+    2.  Redirect 重定向
+    3.  Link 超级链接
+
+render(){
+    return <Router> 
+        <ul>
+        [0,1,2].map{
+            pageIndex =>
+            <li key={pageIndex}> <Link to={'./page${pageIndex}'} > Page {pageIndex}</Link></li>
+        }
+        </ul>
+        //注：做了一个三个超级链接
+
+        <div>
+            <Switch>
+             [0,1,2].map{
+                pageIndex =>
+                <Route 
+                    key={pageIndex}> 
+                    path = {'/page${pageIndex}'}
+                    component = {   
+                        Loadable({
+                        async loader(){
+                        const module = await import(/* webpackChunkName:"[request]" */ `../pages/page${pageIndex}`);
+                        await sleep(); //只是为了展示效果
+                        return module.default;//注：这个就能加到 default 的component 
+                        },
+                        loading:Loading
+                    })
+                    } //教程里用的是 lazy loading
+                />
+            }
+            </Switch>
+        </div>
+    <Router>
+}
+1.  HashRouter对应的URL: localhost:8080/#/page1
+(1) 优点:   可以直接 刷新page,  因为服务端能识别 这个带#的URL 
+(2) 缺点:   URL有一个#
+
+2.  BrowserRouter --- localhost:8080/page1
+代码里的 HashRouter as Router 改成 BrowserRouter as Router
+(1) 优点:   URL非常干净
+(2) 缺点(本地dev解决方案如下):   不能直接刷新， 会报404。因为服务器无法识别这个URL。服务器会直接去找底下的这个文件，然后没找到
+
+(3) 解决方案不能直接刷新 - 对服务器进行配置 (其实就是 webpack.config.js 配置)
+webpack.config.js 中
+devServer:{
+    historyApiFallback : true
+}
+注: 实际服务器环境如果不好改造，就不能用 HashRouter
