@@ -1,0 +1,17 @@
+一. 使用 
+在package.json 里添加了 
+    "scripts":{ "webpack --config webpack.analyze.config.js" }
+
+二. 实际配置 Webpack analyzer 的操作
+1.  npm install --save-dev webpack-bundle-analyzer
+
+2.  webpack 配置
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
+module.exports = {
+  plugins: [
+    new BundleAnalyzerPlugin()
+  ]
+}
+
+三. 参考 https://www.npmjs.com/package/webpack-bundle-analyzer
