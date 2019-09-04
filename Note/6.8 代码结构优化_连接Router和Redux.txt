@@ -1,0 +1,68 @@
+一. Redux 和 Router之间的冲突
+1.  Redux 和 Router 的特性
+(1) Redux: 单一数据源，所有的数据都存储在单一的store中
+(2) ReactRouter: 通过URL 控制组件结构 (等于ReactRouter可以通过URL控制数据，从而拥有了数据的自治权)
+
+2.  解决方案 - 将 Redux 和 React Router 数据同步
+
+3.  可选框架: 
+(1) react-router-redux (ReactRouterV4 以下) - 可能会更新，到未来会支持 ReactRouterV4
+(2) connect-react-router(ReactRouterV4) - 视频中使用
+
+二. 任务分解
+1.  扩展 reducer, 插入处理 器由变化 的reducer
+2.  监听store的变化，如果发生了路由相关的变化，需要同步修改history
+
+三. 代码实际操作
+1.  Store 的改变 - 对reducer 进行包装
+import {applyMiddleware, combineReducers, createStore, compose } from 'redux';
+import { createLogger } from 'redux-logger';
+import { routerMiddleware, connectRouter } from 'connect-react-router';
+
+import {createHashHistory} from 'history';
+
+import reducers from './reducers';
+
+const history = createHashHistory(); //注: 这里用的是 createHashHistory, 所以就等于 HashRouter的 history一样的
+//const history = createBrowserHistory(); //注: 这里用的是 createHashHistory, 所以就等于 BrowserRouter的 history一样的
+
+export {history}; //将这里的 history导出去
+
+const store = createStore(
+    //connectRouter(history)(combineReducers({...reducers})), .....
+    //注: 这个上面写法和下面那个compose的效果是一样的, compose就是一个纯函数，效果就是上面这样的
+    compose(
+        connectRouter(history), 
+        combineReducers //注: 用这个 combineReducers 去绑定其他 reducers 和 这个 router
+)({
+    ...reducers
+}),
+    applyMiddleware(
+        routerMiddleware(history), //这里添加的 middleware 就是把 R
+        createLogger
+    )
+)
+export default store;
+
+2.  index.jsx -- 让 Router 同步 redux 的状态
+ReactDOM.render(
+    <Provider store={store} >
+        <ConnectRouter history={history}>
+        <App />
+        </ConnectRouter>
+    </Provider>,
+    document.querySelector('#app')
+);
+注: (1) 这里只能使用 <ConnectRouter> 而不能使用 之前讲的 HashRouter 和 HistoryRouter
+    (2) 手动传入 history
+
+3.  app.jsx - 添加了 withRouter 高阶函数 去保证URL更新，就会更新数据, 特别针对 PureComponent (shouldComponentUpdate会返回true)
+import {withRouter, Switch, Route, .... } from 'react-router-dom';
+
+@withRouter //防止组件不更新
+class App extends React.PureComponent{
+....
+}
+注: 
+原因 -  Redux 是利用 react.Context。当所以数据更新之后， react.Context 会更新，但是有可能 props 地址值不会更新,浅比较下就不会重新渲染组件
+        所以有可能 URL更新了， Redux更新了。但是组件没有重新渲染。(所以需要加上 withRouter)
